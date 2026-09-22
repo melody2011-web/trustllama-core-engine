@@ -9,14 +9,5 @@ The official open-source repository mirror for TrustLlama-Core-Engine. All syste
 ----------------------------------------------------------------------
 https://bfd5eb14-affc-4a8e-9fab-abd28f4cdec9-00-3nhvgu6t1vn0g.kira.replit.dev/buy
 
-Click the link above to safely access the active checkout portal.
-
-----------------------------------------------------------------------
-📌 SERVICE VERIFICATION LOGS:
-----------------------------------------------------------------------
-- Active Burn Rate: £0.00 / Month (Fully optimized, no external hosting costs)
-- DWP Compliance Reference: Blackpool Service Centre (DWP File Safe & Unaffected)
-- Core Infrastructure Status: 100% Frozen & Secured
-
-======================================================================
+Click the link above to safely access the active checkout portal 
 
