@@ -4,10 +4,13 @@
 
 The official open-source repository mirror for TrustLlama-Core-Engine. All system codes, 320 regression test files, and local backup records are safely secured and logged.
 
-----------------------------------------------------------------------
-🛒 OFFICIAL SECURE CHECKOUT LINK (VERIFIED REPLIT HOSTING):
-----------------------------------------------------------------------
-https://bfd5eb14-affc-4a8e-9fab-abd28f4cdec9-00-3nhvgu6t1vn0g.kira.replit.dev/buy
+## TRUSTLLAMA LTD Commercial Licensing
 
-Click the link above to safely access the active checkout portal 
+Explore commercial software licensing for independent developers and B2B
+studios through our official website:
 
+- **Licenses and secure USDC checkout:** [https://tllama.me/buy](https://tllama.me/buy)
+- **Official website:** [https://tllama.me](https://tllama.me)
+
+License scope is governed by the executed licensing agreement. The checkout
+accepts native USDC on Solana.
