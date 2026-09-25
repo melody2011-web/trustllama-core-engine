@@ -11,13 +11,13 @@ const tiers = [
     name: "Indie Developer License",
     price: 350,
     icon: Terminal,
-    description: "Entry licensing package for solo developers and small independent teams.",
+    description: "30Hz FastAPI/WebSocket arcade backend and local SQLite WAL persistence for independent teams.",
     features: [
-      "Core 30Hz server-authoritative netcode engine skeleton",
-      "Thread-safe localized SQLite WAL storage configurations",
-      "Decoupled Layer3 precision transaction utility scripts",
+      "30Hz FastAPI/WebSocket server-authoritative gameplay logic",
+      "Local SQLite Write-Ahead Logging (WAL) persistence",
+      "Server-owned game state and WebSocket session handling",
       "Master SHA-256 build checksum manifest included",
-      "Verified via 30+ core functional unit testing structures."
+      "Repository-wide verification: 59 test files, 601 high-concurrency stress test cases."
     ]
   },
   {
@@ -25,14 +25,14 @@ const tiers = [
     name: "Startup Studio License",
     price: 750,
     icon: Server,
-    description: "Commercial licensing package for growing studios and multi-project teams.",
+    description: "30Hz FastAPI/WebSocket arcade backend with local SQLite WAL persistence for growing studios.",
     features: [
-      "Core 30Hz server-authoritative netcode engine skeleton",
-      "Thread-safe localized SQLite WAL storage configurations",
-      "Decoupled Layer3 precision transaction utility scripts",
+      "30Hz FastAPI/WebSocket server-authoritative gameplay logic",
+      "Local SQLite Write-Ahead Logging (WAL) persistence",
+      "Server-owned game state and WebSocket session handling",
       "Advanced automated webhook delivery rails included",
       "Multi-project commercial licensing rights",
-      "Verified via 85+ localized network integration test suites."
+      "Repository-wide verification: 59 test files, 601 high-concurrency stress test cases."
     ],
     popular: true
   },
@@ -41,14 +41,14 @@ const tiers = [
     name: "Enterprise Commercial License",
     price: 1950,
     icon: Building2,
-    description: "Highest-tier commercial package for established studios and publishers.",
+    description: "30Hz FastAPI/WebSocket arcade backend and local SQLite WAL persistence for established studios.",
     features: [
-      "Core 30Hz server-authoritative netcode engine skeleton",
-      "Thread-safe localized SQLite WAL storage configurations",
-      "Decoupled Layer3 precision transaction utility scripts",
+      "30Hz FastAPI/WebSocket server-authoritative gameplay logic",
+      "Local SQLite Write-Ahead Logging (WAL) persistence",
+      "Server-owned game state and WebSocket session handling",
       "Full institutional, unrestricted high-throughput organizational usage rights",
       "Priority production-grade master file distribution framework",
-      "Verified via enterprise-grade multi-tenant production layout testing."
+      "Repository-wide verification: 59 test files, 601 high-concurrency stress test cases."
     ]
   }
 ];
@@ -143,7 +143,7 @@ export function TierSelector({ onSelect }: TierSelectorProps) {
             "Cryptographic HMAC-SHA256 verification",
             "Asynchronous RPC streaming with automated failover",
             "Localized SQLite persistent cursor storage",
-            "Verified via the full 169-point high-concurrency master stress suite.",
+            "159 dedicated tests for the Webhook Rail Pro module.",
           ].map((specification) => (
             <li key={specification} className="flex items-start gap-3 text-sm font-medium">
               <div className="mt-0.5 shrink-0 rounded-full bg-primary/10 p-0.5 text-primary">

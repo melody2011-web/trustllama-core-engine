@@ -7,17 +7,17 @@ Welcome to the official open-source repository mirror for the **TrustLlama Core 
 
 ---
 
-## 📊 Enterprise-Grade Verification & Rigour
+## 📊 Verification & Architecture
 
-TrustLlama is engineered for high-concurrency environments and real-world network instability. 
-* **169-Point High-Concurrency Stress Suite:** Verified safe under peak network load with a **0% failure rate** across simulated packet drops, network lag, and malformed inputs.
-* **Comprehensive Testing Pipeline:** Safe deployment backed by **320+ strict regression test files** logging backend, state persistence, and webhook delivery frameworks.
+The licensed arcade framework centers on 30Hz FastAPI/WebSocket server-authoritative gameplay logic and local SQLite Write-Ahead Logging (WAL) persistence.
+* **Repository verification inventory:** 59 total test files and 601 total high-concurrency stress test cases, including 159 dedicated Webhook Rail Pro tests.
+* **Isolated token framework:** The Token-2022 Transfer Hook and Pool Adapter elements are gated behind a secure Fail-Closed/Devnet Simulation boundary, not presented as a universal exploit patch or live on-chain execution.
 
 ---
 
 ## 🛠️ Commercial Software Licensing
 
-TrustLlama provides white-label, server-authoritative multiplayer netcode skeletons and decimal utility toolkits for independent developers and commercial studios. All payment settlements are processed via **100% non-custodial native USDC on Solana**.
+TrustLlama licenses a 30Hz FastAPI/WebSocket server-authoritative arcade backend with local SQLite WAL persistence for independent developers and commercial studios. License scope is governed by the executed corporate licensing agreement; checkout accepts native USDC on Solana.
 
 ### Available Licensing Packages:
 * **Indie Developer License (\$350 USDC):** Entry-tier package for solo engineers and rapid prototyping.

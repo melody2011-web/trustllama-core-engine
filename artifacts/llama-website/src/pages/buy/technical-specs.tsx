@@ -1,7 +1,7 @@
 const specifications = [
   {
     label: "Core Engine Stability",
-    detail: "169 comprehensive high-concurrency stress tests executed and passed, with a reported 0% failure rate under peak network load.",
+    detail: "Repository-wide: 59 total test files and 601 total high-concurrency stress test cases.",
   },
   {
     label: "Thread Integrity",
@@ -9,7 +9,11 @@ const specifications = [
   },
   {
     label: "Solana Webhook Delivery",
-    detail: "Layer 3 precision transaction utilities optimized for sub-second delivery grants.",
+    detail: "Webhook Rail Pro has 159 dedicated tests for authenticated delivery and recovery paths.",
+  },
+  {
+    label: "Isolated Token Framework",
+    detail: "The Token-2022 Transfer Hook and Pool Adapter framework elements run inside a secure Fail-Closed/Devnet Simulation gate, not as a universal exploit patch.",
   },
 ];
 

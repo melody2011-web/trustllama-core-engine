@@ -75,8 +75,8 @@ export function Landing() {
         {/* Hero Section */}
         <div id="manifesto" className="max-w-4xl relative z-10 scroll-m-28">
           <h1 className="max-w-full text-[2.5rem] sm:text-6xl md:text-7xl lg:text-[5.5rem] font-display font-extrabold leading-[1.08] sm:leading-[1.05] tracking-tight animate-fade-up opacity-0" style={{ animationDelay: '200ms' }}>
-            Trust in <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-blue-400">Simplicity.</span><br />
-            Verify in <span className="text-transparent bg-clip-text bg-gradient-to-r from-secondary to-orange-400">Seconds.</span>
+            TrustLlama: The <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-blue-400">Secure, Cheat-Proof</span>{' '}
+            Server-Authoritative Web3 Arcade Framework.
           </h1>
           <Link
             href="/buy"
@@ -88,7 +88,7 @@ export function Landing() {
             <ArrowRight className="w-5 h-5 shrink-0 group-hover:translate-x-1 transition-transform" />
           </Link>
           <p className="mt-8 text-xl md:text-2xl text-muted-foreground max-w-2xl leading-relaxed animate-fade-up opacity-0 font-medium" style={{ animationDelay: '300ms' }}>
-            TRUSTLLAMA LTD is an enterprise software engineering firm providing production-ready, white-label multiplayer infrastructure skeletons and decoupled decimal arithmetic toolkits for independent developers and commercial studios. We specialize in providing fully compiled, server-authoritative netcode solutions and B2B middleware packages that optimize network performance and facilitate secure, non-custodial digital micro-settlements.
+            TRUSTLLAMA LTD licenses a 30Hz FastAPI/WebSocket server-authoritative arcade framework with local SQLite Write-Ahead Logging (WAL) persistence. Server-owned gameplay logic and durable state are the focus of the commercial packages.
           </p>
 
           <div className="mt-12 flex flex-col sm:flex-row flex-wrap items-center gap-4 animate-fade-up opacity-0" style={{ animationDelay: '400ms' }}>
@@ -202,7 +202,7 @@ export function Landing() {
                 <Activity className="w-7 h-7" />
               </div>
               <h3 className="text-2xl font-display font-bold mb-4">Prepared Transfer Rules</h3>
-              <p className="text-muted-foreground leading-relaxed text-lg">The system architecture maps out programmatic directional transfer handling, enabling automated token tax burns (0.5% buy / 1.0% sell) and strict anti-whale transaction limits to execute directly on-chain.</p>
+              <p className="text-muted-foreground leading-relaxed text-lg">The Token-2022 Transfer Hook and Pool Adapter framework elements are intentionally isolated inside a secure Fail-Closed/Devnet Simulation gate. This is a controlled safety boundary, not a universal exploit patch or a claim of live on-chain execution.</p>
             </div>
 
             {/* Rule 4 */}
@@ -240,7 +240,7 @@ export function Landing() {
               <FileCode2 className="w-12 h-12 text-primary" />
             </div>
             <h2 className="text-4xl md:text-5xl lg:text-6xl font-display font-bold mb-8">Built for Verification</h2>
-            <p className="text-xl text-muted-foreground mb-12 leading-relaxed">We believe that trust in Web3 shouldn't rely on blind faith. It should rely on undeniable, easily accessible proof.</p>
+            <p className="text-xl text-muted-foreground mb-12 leading-relaxed">Repository verification covers 59 total test files and 601 total high-concurrency stress test cases, including 159 dedicated tests for the Webhook Rail Pro module.</p>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-left">
               {[
