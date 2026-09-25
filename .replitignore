@@ -1,0 +1,24 @@
+# The format of this file is identical to `.dockerignore`.
+# It is used to reduce the size of deployed images to make the process of publishing faster.
+
+# Local toolchains and caches are not production inputs.
+.local
+.cache
+.git
+
+# JavaScript dependencies are restored by the publishing install step.
+node_modules
+**/node_modules
+
+# Rust build output is reproducible and can exceed the deployment upload limit.
+target
+**/target
+
+# Generated interpreter and test caches.
+__pycache__
+**/__pycache__
+*.pyc
+
+# Local test output and incremental compiler state.
+tests/logs
+*.tsbuildinfo

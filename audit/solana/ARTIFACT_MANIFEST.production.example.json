@@ -1,0 +1,36 @@
+{
+  "schemaVersion": 3,
+  "sourceCommit": "FROZEN_SOURCE_FULL_GIT_COMMIT",
+  "validationCommit": "COMMITTED_SBF_HARNESS_FULL_GIT_COMMIT",
+  "buildKind": "production",
+  "lockfiles": {
+    "onchain/tlama-pool-hook/Cargo.lock": "LOWERCASE_SHA256_OF_FROZEN_LOCKFILE",
+    "onchain/tlama-transfer-hook/Cargo.lock": "LOWERCASE_SHA256_OF_FROZEN_LOCKFILE"
+  },
+  "toolchain": {
+    "agave": {"version": "v2.2.1", "archiveSha256": "LOWERCASE_ARCHIVE_SHA256"},
+    "platformTools": {"version": "v1.52", "archiveSha256": "LOWERCASE_ARCHIVE_SHA256"},
+    "sbfCargo": {"version": "1.89.0", "archiveSha256": "LOWERCASE_ARCHIVE_SHA256"},
+    "sbfRustc": {"version": "1.89.0-dev", "archiveSha256": "LOWERCASE_ARCHIVE_SHA256"}
+  },
+  "ids": {
+    "adapter": "VALUE_FROM_SOURCECOMMIT_onchain_production-ids.txt",
+    "hook": "VALUE_FROM_SOURCECOMMIT_onchain_production-ids.txt",
+    "tlamaMint": "VALUE_FROM_SOURCECOMMIT_onchain_production-ids.txt",
+    "tlamaVault": "VALUE_FROM_SOURCECOMMIT_onchain_production-ids.txt",
+    "wsolVault": "VALUE_FROM_SOURCECOMMIT_onchain_production-ids.txt",
+    "poolAuthority": "VALUE_FROM_SOURCECOMMIT_onchain_production-ids.txt"
+  },
+  "artifacts": {
+    "tlama_pool_adapter.so": "LOWERCASE_SHA256_OF_ELF",
+    "tlama_transfer_hook.so": "LOWERCASE_SHA256_OF_ELF"
+  },
+  "runtimeArtifacts": {
+    "spl_token_2022.so": "LOWERCASE_SHA256_OF_REPLAY_ELF",
+    "spl_token.so": "LOWERCASE_SHA256_OF_REPLAY_ELF"
+  },
+  "reproducibleBuildEvidence": {
+    "file": "reproducible-build.json",
+    "sha256": "LOWERCASE_SHA256_OF_REPRODUCIBLE_BUILD_JSON"
+  }
+}

@@ -1,0 +1,8 @@
+# DISPOSABLE LOCAL-DEVELOPMENT IDENTITIES ONLY. NEVER USE FOR DEVNET OR MAINNET.
+# Private keypairs are ephemeral under /tmp and are not part of the repository.
+adapter=AZQZVVBGGtcoL532KQLP1j8qRdiuUAJyGx5jZWBH7Qhx
+hook=Bj3BBMCLEFV3jn5tXGvuZHPDDuodBjeLJHAtNg7N3CcB
+tlamaMint=B2AQvphzRs5EPvacBhXMyiaF1FH9di7q2NQpahtPMyaL
+tlamaVault=AWW8cH9mMsCkYD4o826xLxpvJERPdQvvDE5uYmG15BmS
+wsolVault=2zdQWxR62vbS5RJ4irSShEz4DmHoqkqY5mreVEEx4HwY
+poolAuthority=EtA88eFVN55EAVbo7CUcBN5m91jiZz9YQ5ec6kHNYv9J

@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>TrustLlama White Paper</title>
+    <meta
+      name="description"
+      content="The TrustLlama project white paper: architecture, arcade design, safety model, development status, and roadmap."
+    />
+    <style>
+      :root {
+        color-scheme: dark;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+        background: #071016;
+        color: #e5f7ff;
+      }
+      body {
+        margin: 0;
+        padding: 3rem 1.5rem;
+      }
+      main {
+        max-width: 50rem;
+        margin: 0 auto;
+        padding: 2rem;
+        border: 1px solid #1f6370;
+        border-radius: 1rem;
+        background: #0b1820;
+      }
+      h1 {
+        color: #70f6ff;
+      }
+      .eyebrow {
+        color: #ff8ce8;
+        font-size: 0.78rem;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+      }
+      a {
+        color: #70f6ff;
+      }
+      pre {
+        white-space: pre-wrap;
+        line-height: 1.7;
+        font: inherit;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <div class="eyebrow">Public project document</div>
+      <h1>TrustLlama White Paper</h1>
+      <p><a href="./">← Return to TrustLlama</a></p>
+      <pre id="rules" aria-live="polite">Loading white paper...</pre>
+    </main>
+    <script>
+      const rules = document.querySelector("#rules");
+      fetch("./whitepaper.md")
+        .then((response) => {
+          if (!response.ok) throw new Error("White paper unavailable");
+          return response.text();
+        })
+        .then((text) => {
+          rules.textContent = text;
+        })
+        .catch(() => {
+          rules.textContent = "The white paper could not be loaded. Please refresh the page.";
+        });
+    </script>
+  </body>
+</html>

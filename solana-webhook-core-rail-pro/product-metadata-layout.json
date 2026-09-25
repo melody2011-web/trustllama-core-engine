@@ -1,0 +1,8 @@
+{
+  "entries": [
+    {
+      "name": "product_id",
+      "type": "string"
+    }
+  ]
+}

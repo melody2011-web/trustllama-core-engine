@@ -1,0 +1,208 @@
+modules = ["nodejs-24", "python-3.11", "rust-stable", "rust-nightly", "postgresql-16"]
+
+[deployment]
+deploymentTarget = "vm"
+run = ".pythonlibs/bin/python -u -m bot.production_service"
+ignorePorts = true
+
+[deployment.postBuild]
+args = ["pnpm", "store", "prune"]
+env = { "CI" = "true" }
+
+[workflows]
+runButton = "Project"
+
+[[workflows.workflow]]
+name = "Project"
+mode = "parallel"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "paper-safety"
+
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "Secure Trading Panel"
+
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "Grid Bot 1 BTC-USDT"
+
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "Grid Bot 2 XRP-USDT"
+
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "TLAMA Arcade Multiplayer Preview"
+
+[[workflows.workflow]]
+name = "paper-safety"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "pnpm test"
+
+[workflows.workflow.metadata]
+isValidation = true
+
+[[workflows.workflow]]
+name = "Secure Trading Panel"
+author = "agent"
+
+[workflows.workflow.metadata]
+outputType = "webview"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "streamlit run secure_panel.py --server.port 8501 --server.headless true --server.address 0.0.0.0"
+waitForPort = 8501
+
+[[workflows.workflow]]
+name = "Grid Bot 1 BTC-USDT"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "ENABLE_LIVE_TRADING=false LIVE_STRATEGY_MODE=disabled TRADING_GRID_BOT_1_ENABLE_LIVE_TRADING=false TRADING_GRID_BOT_1_STRATEGY_MODE=disabled .pythonlibs/bin/python -u grid_bot_1.py"
+
+[workflows.workflow.metadata]
+outputType = "console"
+
+[[workflows.workflow]]
+name = "Grid Bot 2 XRP-USDT"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "ENABLE_LIVE_TRADING=false LIVE_STRATEGY_MODE=disabled TRADING_GRID_BOT_2_ENABLE_LIVE_TRADING=false TRADING_GRID_BOT_2_STRATEGY_MODE=disabled .pythonlibs/bin/python -u grid_bot_2.py"
+
+[workflows.workflow.metadata]
+outputType = "console"
+
+[[workflows.workflow]]
+name = "TLAMA Arcade Multiplayer Preview"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "PORT=8099 TLAMA_GAME_HOST=0.0.0.0 .pythonlibs/bin/python -u llama_website/llama_game/backend.py"
+waitForPort = 8099
+
+[workflows.workflow.metadata]
+outputType = "webview"
+
+[agent]
+stack = "PNPM_WORKSPACE"
+expertMode = true
+
+[postMerge]
+path = "scripts/post-merge.sh"
+timeoutMs = 20000
+
+[nix]
+channel = "stable-25_05"
+packages = ["gitFull", "openssl", "pkg-config", "playwright-driver", "rustup"]
+
+[userenv]
+
+[userenv.shared]
+STRATEGY_POSITION_BPS = "2000"
+COMMUNITY_MODERATOR_LIVE = "false"
+MODERATOR_ADMIN_IDS = "8852235725"
+MODERATOR_ALLOWED_DOMAINS = "replit.app,raydium.io,dexscreener.com"
+MODERATOR_CHAT_ID = "@TrustLlamaOfficial"
+ANNOUNCER_LIVE_SEND = "false"
+TELEGRAM_SERVICES_ENABLED = "false"
+TLAMA_ARCADE_ADMIN_PORTAL_ENABLED = "true"
+TLAMA_ARCADE_ALLOWED_ORIGINS = "https://bnb-de-fi-trading-bot.replit.app,https://tllama.me,https://www.tllama.me"
+
+[userenv.production]
+ENABLE_LIVE_TRADING = "false"
+LIVE_STRATEGY_MODE = "grid"
+GRID_MAX_BUDGET_USDT = "250"
+BUY_IMMEDIATELY_NOW = "false"
+GRID_STEP_PERCENT = "0.05"
+PER_LINE_USDT = "50.0"
+PROFIT_TARGET_PERCENT = "0.05"
+TOTAL_GRID_LEVELS = "5"
+TLAMA_ARCADE_DASHBOARD_ORIGINS = "https://tllama.me,https://www.tllama.me"
+TLAMA_ARCADE_DASHBOARD_URL = "https://tllama.me/llama-website/arcade"
+TLAMA_GAME_HOOK_PROGRAM_ADDRESS = "FMjjes3MiLMMKCPExba4SiRSKzd5PHRpZ6EosAD8hnhp"
+TLAMA_GAME_REWARDS_VAULT_ADDRESS = "HSZS43XNbjQ2FPQGA4vNSJRsVm8gphvUdDf5eNHDWkWv"
+TLAMA_MINT_ADDRESS = "HaGi2rsgBAGRyCEgvHrSEdod6fnomQLoT2Fpdv8WjD8a"
+TLAMA_PAYMENT_ENABLED = "false"
+TLAMA_PAYMENT_NETWORK = "devnet"
+TLAMA_PUBLIC_SOLANA_RPC_URL = "https://api.devnet.solana.com"
+TLAMA_TOKEN_DECIMALS = "9"
+TLAMA_WEB3_ENABLED = "false"
+
+[userenv.development]
+STAGING_DISTRIBUTION_PATH = "/home/runner/workspace/solana-webhook-core-rail-pro/staging-webhook-distribution.toml"
+
+[[ports]]
+localPort = 1024
+externalPort = 3003
+exposeLocalhost = true
+
+[[ports]]
+localPort = 8080
+externalPort = 8080
+
+[[ports]]
+localPort = 8081
+externalPort = 8081
+
+[[ports]]
+localPort = 8082
+externalPort = 80
+
+[[ports]]
+localPort = 8099
+externalPort = 8099
+
+[[ports]]
+localPort = 8501
+externalPort = 3000
+
+[[ports]]
+localPort = 8899
+externalPort = 5173
+
+[[ports]]
+localPort = 8900
+externalPort = 6000
+
+[[ports]]
+localPort = 9900
+externalPort = 3002
+
+[[ports]]
+localPort = 11105
+externalPort = 8000
+
+[[ports]]
+localPort = 18099
+externalPort = 9000
+
+[[ports]]
+localPort = 21507
+externalPort = 5000
+
+[[ports]]
+localPort = 21677
+externalPort = 8008
+
+[[ports]]
+localPort = 22367
+externalPort = 3001
+
+[[ports]]
+localPort = 22368
+externalPort = 6800
+
+[[ports]]
+localPort = 27455
+externalPort = 4200

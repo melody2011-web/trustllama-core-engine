@@ -1,0 +1,41 @@
+{
+  "name": "workspace",
+  "version": "0.0.0",
+  "license": "MIT",
+  "scripts": {
+    "preinstall": "sh -c 'rm -f package-lock.json yarn.lock; case \"$npm_config_user_agent\" in pnpm/*) ;; *) echo \"Use pnpm instead\" >&2; exit 1 ;; esac'",
+    "build": "pnpm run typecheck && pnpm -r --if-present run build",
+    "test": "pnpm --filter @workspace/llama-website test && node --test scripts/check-public-game-copy.test.mjs && pnpm run test:paper && pnpm --filter @workspace/api-server test && pnpm --filter @workspace/retro-arcade test",
+    "test:paper": "env -u BSC_RPC_URL -u WALLET_ADDRESS -u WALLET_PRIVATE_KEY .pythonlibs/bin/python -m unittest discover -s tests -p 'test_*.py'",
+    "test:arcade:webkit": "ARCADE_WEBKIT_VALIDATION=1 .pythonlibs/bin/python -m unittest tests.test_llama_game_levels.ArcadeWebKitMobileControlTests -v",
+    "audit:solana": "bash scripts/solana-audit.sh quick",
+    "audit:solana:sbf": "bash scripts/solana-audit.sh sbf",
+    "configure:tlama-production-ids": ".pythonlibs/bin/python scripts/configure_tlama_production_ids.py",
+    "check:tlama-production-ids": ".pythonlibs/bin/python scripts/configure_tlama_production_ids.py --check",
+    "typecheck:libs": "tsc --build",
+    "typecheck": "pnpm run typecheck:libs && pnpm -r --filter \"./artifacts/**\" --filter \"./scripts\" --if-present run typecheck"
+  },
+  "private": true,
+  "dependencies": {
+    "@pancakeswap/chains": "^0.9.0",
+    "@pancakeswap/smart-router": "7.6.1",
+    "@pancakeswap/swap-sdk-core": "^1.6.0",
+    "@pancakeswap/tokens": "^0.9.0",
+    "@playwright/test": "^1.63.0",
+    "@solana/pay": "0.2.6",
+    "@solana/spl-token": "0.4.14",
+    "@solana/web3.js": "1.98.4",
+    "bignumber.js": "^9.3.1",
+    "buffer": "^6.0.3",
+    "fastestsmallesttextencoderdecoder": "1.0.22",
+    "qrcode.react": "^4.2.0",
+    "react-markdown": "^10.1.0",
+    "remark-gfm": "^4.0.1",
+    "viem": "^2.37.13",
+    "vitest": "^5.0.0"
+  },
+  "devDependencies": {
+    "prettier": "^3.9.6",
+    "typescript": "~5.9.3"
+  }
+}

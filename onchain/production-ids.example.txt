@@ -1,0 +1,9 @@
+# TEMPLATE ONLY. Do not rename this file to production-ids.txt.
+# A release freeze must commit production-ids.txt with exactly these six
+# key=value lines, valid distinct 32-byte base58 public keys, and no comments.
+adapter=REPLACE_WITH_MAINNET_ADAPTER_ID
+hook=REPLACE_WITH_MAINNET_HOOK_ID
+tlamaMint=REPLACE_WITH_MAINNET_TLAMA_MINT_ID
+tlamaVault=REPLACE_WITH_MAINNET_TLAMA_VAULT_ID
+wsolVault=REPLACE_WITH_MAINNET_WSOL_VAULT_ID
+poolAuthority=REPLACE_WITH_DERIVED_POOL_AUTHORITY_ID

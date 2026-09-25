@@ -1,0 +1,27 @@
+[project]
+name = "solana-webhook-core-rail-pro"
+version = "0.1.0"
+description = "Production-ready async Solana RPC polling and HMAC-signed webhook delivery."
+readme = "Readme.md"
+requires-python = ">=3.11"
+dependencies = [
+    "aiohttp>=3.11.0,<4.0.0",
+]
+
+[project.scripts]
+solana-webhook-core-rail-pro = "solana_webhook_core_rail_pro.cli:main"
+
+[build-system]
+requires = ["hatchling>=1.27.0"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["solana_webhook_core_rail_pro"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]

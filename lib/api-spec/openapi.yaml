@@ -1,0 +1,524 @@
+openapi: 3.1.0
+info:
+  # Do not change the title, if the title changes, the import paths will be broken
+  title: Api
+  version: 0.1.0
+  description: API specification
+servers:
+  - url: /api
+    description: Base API path
+tags:
+  - name: health
+    description: Health operations
+  - name: paper
+    description: Read-only paper trading status
+  - name: live
+    description: Read-only live runner status
+  - name: arcade
+    description: Ownership-protected read-only Arcade dashboard data
+  - name: feedback
+    description: Public player bug reports and feedback
+paths:
+  /healthz:
+    get:
+      operationId: healthCheck
+      tags: [health]
+      summary: Health check
+      description: Returns server health status
+      responses:
+        "200":
+          description: Healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+  /paper/status:
+    get:
+      operationId: getPaperStatus
+      tags: [paper]
+      summary: Get paper trading status
+      description: Returns the simulated paper account and loop health without invoking live execution.
+      responses:
+        "200":
+          description: Paper status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaperStatus"
+        "503":
+          description: Paper journal unavailable
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StatusError"
+  /live/status:
+    get:
+      operationId: getLiveStatus
+      tags: [live]
+      summary: Get live runner status
+      description: Returns live runner liveness and retry state without wallet data or transaction controls.
+      responses:
+        "200":
+          description: Live runner status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LiveStatus"
+        "503":
+          description: Live journal unavailable
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StatusError"
+  /arcade/dashboard:
+    get:
+      operationId: getArcadeDashboard
+      tags: [arcade]
+      summary: Get the current player's Arcade dashboard
+      description: Returns ownership-protected profile, simulated ticket, and match-history data without enabling payments.
+      parameters:
+        - name: X-Tlama-Player-Key
+          in: header
+          required: true
+          schema:
+            type: string
+            pattern: "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$"
+        - name: X-Tlama-Ownership-Token
+          in: header
+          required: true
+          schema:
+            type: string
+            minLength: 32
+            maxLength: 128
+      responses:
+        "200":
+          description: Player dashboard
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ArcadeDashboard"
+        "401":
+          description: Player ownership could not be verified
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StatusError"
+        "404":
+          description: Player has not joined the Arcade yet
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StatusError"
+        "503":
+          description: Arcade storage unavailable
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StatusError"
+  /feedback:
+    post:
+      operationId: submitFeedback
+      tags: [feedback]
+      summary: Submit player feedback
+      description: Accepts a bounded bug report or feedback message without interacting with arcade gameplay state.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FeedbackInput"
+      responses:
+        "202":
+          description: Feedback accepted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FeedbackReceipt"
+        "400":
+          description: Invalid feedback
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StatusError"
+        "429":
+          description: Too many feedback submissions
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StatusError"
+        "503":
+          description: Feedback storage unavailable
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StatusError"
+components:
+  schemas:
+    FeedbackInput:
+      type: object
+      additionalProperties: false
+      properties:
+        category:
+          type: string
+          enum: [bug, feedback]
+        message:
+          type: string
+          minLength: 1
+          maxLength: 2000
+        page:
+          type: string
+          minLength: 1
+          maxLength: 200
+      required: [category, message, page]
+    FeedbackReceipt:
+      type: object
+      additionalProperties: false
+      properties:
+        ok:
+          type: boolean
+        id:
+          type: string
+          minLength: 36
+          maxLength: 36
+      required: [ok, id]
+    HealthStatus:
+      type: object
+      properties:
+        status:
+          type: string
+      required:
+        - status
+    ArcadePlayer:
+      type: object
+      properties:
+        playerId:
+          type: string
+        name:
+          type: string
+        highScore:
+          type: number
+        matchesPlayed:
+          type: number
+      required: [playerId, name, highScore, matchesPlayed]
+    ArcadeTicket:
+      type: object
+      properties:
+        ticketId:
+          type: string
+        status:
+          type: string
+          enum: [simulated_active]
+        entryFeeTlama:
+          type: number
+        issuedAt:
+          type: string
+          format: date-time
+      required: [ticketId, status, entryFeeTlama, issuedAt]
+    ArcadeMatch:
+      type: object
+      properties:
+        ticketId:
+          type: string
+        finalScore:
+          type: number
+        entryFeeTlama:
+          type: number
+        completedAt:
+          type: string
+          format: date-time
+      required: [ticketId, finalScore, entryFeeTlama, completedAt]
+    ArcadeDashboard:
+      type: object
+      properties:
+        player:
+          $ref: "#/components/schemas/ArcadePlayer"
+        activeTickets:
+          type: array
+          items:
+            $ref: "#/components/schemas/ArcadeTicket"
+        matchHistory:
+          type: array
+          items:
+            $ref: "#/components/schemas/ArcadeMatch"
+        paymentsEnabled:
+          type: boolean
+          enum: [false]
+      required: [player, activeTickets, matchHistory, paymentsEnabled]
+    PaperBalance:
+      type: object
+      properties:
+        BNB:
+          type: string
+        XRP:
+          type: string
+        BTC:
+          type: string
+      required: [BNB, XRP, BTC]
+    PaperPosition:
+      type: object
+      properties:
+        symbol:
+          type: string
+          enum: [XRP, BTC]
+        amount:
+          type: string
+        entryPrice:
+          type: string
+      required: [symbol, amount, entryPrice]
+    PaperFill:
+      type: object
+      properties:
+        at:
+          type: string
+          format: date-time
+        action:
+          type: string
+        symbol:
+          type: string
+        amountIn:
+          type: string
+        amountOut:
+          type: string
+        price:
+          type: string
+        reason:
+          type: string
+        outcome:
+          type: string
+      required: [at, action, symbol, amountIn, amountOut, price, reason, outcome]
+    PaperWarmup:
+      type: object
+      properties:
+        samples:
+          type: number
+        required:
+          type: number
+        ready:
+          type: boolean
+      required: [samples, required, ready]
+    PaperStatus:
+      type: object
+      properties:
+        mode:
+          type: string
+          enum: [paper]
+        liveExecution:
+          type: boolean
+          enum: [false]
+        status:
+          type: string
+          enum: [healthy, warming_up, stale, degraded, not_started]
+        balances:
+          $ref: "#/components/schemas/PaperBalance"
+        openPositions:
+          type: array
+          items:
+            $ref: "#/components/schemas/PaperPosition"
+        recentFills:
+          type: array
+          items:
+            $ref: "#/components/schemas/PaperFill"
+        warmup:
+          type: object
+          properties:
+            XRP:
+              $ref: "#/components/schemas/PaperWarmup"
+            BTC:
+              $ref: "#/components/schemas/PaperWarmup"
+          required: [XRP, BTC]
+        lastSuccessfulQuoteAt:
+          type: ["string", "null"]
+          format: date-time
+        lastSuccessfulQuoteAtBySymbol:
+          type: object
+          properties:
+            XRP:
+              type: ["string", "null"]
+              format: date-time
+            BTC:
+              type: ["string", "null"]
+              format: date-time
+          required: [XRP, BTC]
+        lastLoopSuccessAt:
+          type: ["string", "null"]
+          format: date-time
+        lastLoopErrorAt:
+          type: ["string", "null"]
+          format: date-time
+        lastLoopError:
+          type: ["string", "null"]
+        stateUpdatedAt:
+          type: ["string", "null"]
+          format: date-time
+      required:
+        - mode
+        - liveExecution
+        - status
+        - balances
+        - openPositions
+        - recentFills
+        - warmup
+        - lastSuccessfulQuoteAt
+        - lastSuccessfulQuoteAtBySymbol
+        - lastLoopSuccessAt
+        - lastLoopErrorAt
+        - lastLoopError
+        - stateUpdatedAt
+    LiveStatus:
+      type: object
+      properties:
+        mode:
+          type: string
+          enum: [live]
+        liveExecution:
+          type: boolean
+        strategyMode:
+          type: string
+          enum: [disabled, ema, grid]
+        grid:
+          $ref: "#/components/schemas/LiveGridStatus"
+        status:
+          type: string
+          enum: [disabled, not_started, healthy, stale, retrying]
+        polling:
+          type: boolean
+        heartbeatAt:
+          type: ["string", "null"]
+          format: date-time
+        lastSuccessfulPollAt:
+          type: ["string", "null"]
+          format: date-time
+        lastRetryAt:
+          type: ["string", "null"]
+          format: date-time
+        retryDelaySeconds:
+          type: number
+        retryCount:
+          type: number
+        lastErrorAt:
+          type: ["string", "null"]
+          format: date-time
+        lastError:
+          type: ["string", "null"]
+        confirmedAlertReconciliation:
+          type: array
+          items:
+            $ref: "#/components/schemas/ConfirmedAlertReconciliation"
+        stateUpdatedAt:
+          type: ["string", "null"]
+          format: date-time
+      required:
+        - mode
+        - liveExecution
+        - strategyMode
+        - grid
+        - status
+        - polling
+        - heartbeatAt
+        - lastSuccessfulPollAt
+        - lastRetryAt
+        - retryDelaySeconds
+        - retryCount
+        - lastErrorAt
+        - lastError
+        - confirmedAlertReconciliation
+        - stateUpdatedAt
+    ConfirmedAlertReconciliation:
+      type: object
+      properties:
+        txHash:
+          type: string
+        action:
+          type: string
+        symbol:
+          type: string
+        blockNumber:
+          type: number
+        confirmedAt:
+          type: ["string", "null"]
+          format: date-time
+        resendAvailable:
+          type: boolean
+      required:
+        - txHash
+        - action
+        - symbol
+        - blockNumber
+        - confirmedAt
+        - resendAvailable
+    LiveGridProgress:
+      type: object
+      properties:
+        anchorPrice:
+          type: ["string", "null"]
+        nextLevel:
+          type: ["number", "null"]
+        filledLevels:
+          type: number
+        totalLevels:
+          type: number
+        spentUsdt:
+          type: string
+        remainingUsdt:
+          type: string
+        activeExposureUsdt:
+          type: string
+        realizedUsdt:
+          type: string
+        openLots:
+          type: array
+          items:
+            $ref: "#/components/schemas/LiveGridLot"
+        lastSellOutcome:
+          type: ["string", "null"]
+        state:
+          type: string
+          enum: [not_started, active, complete, paused_at_floor]
+      required:
+        - anchorPrice
+        - nextLevel
+        - filledLevels
+        - totalLevels
+        - spentUsdt
+        - remainingUsdt
+        - activeExposureUsdt
+        - realizedUsdt
+        - openLots
+        - lastSellOutcome
+        - state
+    LiveGridLot:
+      type: object
+      properties:
+        level:
+          type: number
+        amountToken:
+          type: string
+        buyAmountUsdt:
+          type: string
+        buyPrice:
+          type: string
+        targetPrice:
+          type: string
+      required:
+        - level
+        - amountToken
+        - buyAmountUsdt
+        - buyPrice
+        - targetPrice
+    LiveGridStatus:
+      type: object
+      properties:
+        XRP:
+          $ref: "#/components/schemas/LiveGridProgress"
+        BTC:
+          $ref: "#/components/schemas/LiveGridProgress"
+      required: [XRP, BTC]
+    StatusError:
+      type: object
+      properties:
+        ok:
+          type: boolean
+        error:
+          type: string
+      required: [ok, error]
+

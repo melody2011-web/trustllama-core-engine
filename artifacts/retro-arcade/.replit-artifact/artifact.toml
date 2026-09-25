@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/retro-arcade/"
+title = "TrustLlama Retro Arcade"
+description = "A parallel retro side-scrolling frontend for the existing server-authoritative ten-stage TrustLlama Arcade engine, sharing authoritative sessions, scores, entry tickets, lives, and payment catalog without modifying the original neon arena client."
+version = "1.0.0"
+id = "artifacts/retro-arcade"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/retro-arcade/" ]
+localPort = 21677
+
+[services.development]
+run = "pnpm --filter @workspace/retro-arcade run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/retro-arcade", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/retro-arcade/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "21677"
+BASE_PATH = "/retro-arcade/"

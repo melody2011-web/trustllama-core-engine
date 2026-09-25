@@ -1,0 +1,21 @@
+[project]
+name = "repl-nix-workspace"
+version = "0.1.0"
+description = "Add your description here"
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi>=0.141.1",
+    "layer3-core-rail",
+    "playwright>=1.62.0",
+    "pytelegrambotapi>=4.36.1",
+    "python-telegram-bot[job-queue]>=22.0",
+    "solana>=0.40.1",
+    "solders>=0.28.0",
+    "streamlit>=1.62.0",
+    "uvicorn[standard]>=0.52.4",
+    "web3>=7.16.0",
+    "websockets>=15.0.1",
+]
+
+[tool.uv.sources]
+layer3-core-rail = { path = "layer3-core-rail", editable = true }

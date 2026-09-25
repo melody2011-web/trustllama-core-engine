@@ -1,0 +1,3805 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta
+      name="description"
+      content="TLAMA Arcade is a lightweight multiplayer canvas game prototype with a simulated entry-fee leaderboard."
+    />
+    <title>TLAMA Arcade</title>
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%2365f7ff'/%3E%3Ctext x='32' y='41' text-anchor='middle' font-family='Arial' font-weight='700' font-size='25' fill='%23070b1d'%3ETL%3C/text%3E%3C/svg%3E" />
+    <style>
+      :root {
+        color-scheme: dark;
+        --safe-area-inset-top: env(safe-area-inset-top);
+        --safe-area-inset-right: env(safe-area-inset-right);
+        --safe-area-inset-bottom: env(safe-area-inset-bottom);
+        --safe-area-inset-left: env(safe-area-inset-left);
+        --ink: #f7f8ff;
+        --muted: #a4accb;
+        --panel: rgba(18, 23, 48, 0.82);
+        --line: rgba(179, 193, 255, 0.18);
+        --blue: #6f7cff;
+        --cyan: #68e7ff;
+        --orange: #ff9a62;
+        --shadow: 0 26px 80px rgba(5, 8, 27, 0.42);
+      }
+
+      * { box-sizing: border-box; }
+
+      body {
+        min-width: 320px;
+        min-height: 100vh;
+        margin: 0;
+        overflow-x: hidden;
+        color: var(--ink);
+        background:
+          radial-gradient(circle at 15% 0%, rgba(111, 124, 255, 0.24), transparent 33rem),
+          radial-gradient(circle at 90% 22%, rgba(255, 154, 98, 0.18), transparent 27rem),
+          #080b1b;
+        font: 15px/1.5 Inter, ui-sans-serif, system-ui, -apple-system, sans-serif;
+      }
+
+      button, input { font: inherit; }
+
+      .shell {
+        width: min(1180px, calc(100% - 36px));
+        margin: 0 auto;
+        padding:
+          max(28px, var(--safe-area-inset-top))
+          var(--safe-area-inset-right)
+          max(48px, var(--safe-area-inset-bottom))
+          var(--safe-area-inset-left);
+      }
+
+      .topbar, .game-panel, .info-panel {
+        border: 1px solid var(--line);
+        background: var(--panel);
+        box-shadow: var(--shadow);
+        backdrop-filter: blur(22px);
+      }
+
+      .topbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 20px;
+        padding: 16px 18px;
+        border-radius: 22px;
+      }
+
+      .brand { display: flex; align-items: center; gap: 12px; }
+
+      .mark {
+        display: grid;
+        width: 42px;
+        height: 42px;
+        place-items: center;
+        border-radius: 14px;
+        color: #090b18;
+        background: linear-gradient(140deg, #f7f8ff, #afbaff);
+        font-weight: 900;
+        letter-spacing: -0.08em;
+      }
+
+      .brand strong { display: block; letter-spacing: 0.02em; }
+      .brand small { display: block; color: var(--muted); font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; }
+
+      .wallet-row { display: flex; align-items: center; gap: 12px; }
+
+      .wallet-status { color: var(--muted); font-size: 12px; }
+
+      button {
+        border: 0;
+        border-radius: 999px;
+        padding: 11px 16px;
+        color: #0a0d20;
+        background: linear-gradient(100deg, var(--cyan), #b3f5ff);
+        cursor: pointer;
+        font-weight: 800;
+        transition: transform 160ms ease, filter 160ms ease;
+      }
+
+      button:hover { filter: brightness(1.08); transform: translateY(-1px); }
+      button:focus-visible, input:focus-visible { outline: 3px solid rgba(104, 231, 255, 0.55); outline-offset: 3px; }
+
+      .eyebrow {
+        margin: 42px 0 8px;
+        color: var(--cyan);
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+      }
+
+      h1, h2, p { margin-top: 0; }
+      h1 { max-width: 720px; margin-bottom: 12px; font-size: clamp(38px, 7vw, 76px); line-height: 0.98; letter-spacing: -0.065em; }
+      h1 span { color: var(--orange); }
+      .lede { max-width: 600px; margin-bottom: 26px; color: var(--muted); font-size: 17px; }
+
+      .game-layout {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 278px;
+        gap: 18px;
+        align-items: stretch;
+      }
+
+      .game-panel { min-width: 0; padding: 14px; border-radius: 26px; }
+      .game-toolbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; padding: 5px 6px 14px; }
+      .connection { display: flex; align-items: center; gap: 8px; color: var(--muted); font-size: 12px; }
+      .connection i { width: 8px; height: 8px; border-radius: 50%; background: var(--orange); }
+      .connection.online i { background: #74e6a4; box-shadow: 0 0 14px #74e6a4; }
+
+      .canvas-wrap {
+        position: relative;
+        overflow: hidden;
+        aspect-ratio: 16 / 10;
+        min-height: 320px;
+        border: 1px solid rgba(179, 193, 255, 0.25);
+        border-radius: 18px;
+        background: #0c1130;
+      }
+
+      canvas {
+        display: block;
+        width: 100%;
+        height: 100%;
+        touch-action: none;
+        user-select: none;
+        -webkit-user-select: none;
+      }
+      .canvas-help {
+        position: absolute;
+        right: 14px;
+        bottom: 11px;
+        max-width: calc(100% - 156px);
+        overflow: hidden;
+        color: rgba(247, 248, 255, 0.62);
+        font-size: 11px;
+        pointer-events: none;
+        text-align: right;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .joystick {
+        position: relative;
+        display: none;
+        flex: 0 0 auto;
+        width: 88px;
+        height: 88px;
+        border: 1px solid rgba(247, 248, 255, 0.28);
+        border-radius: 50%;
+        background: rgba(7, 10, 28, 0.72);
+        box-shadow: inset 0 0 28px rgba(104, 231, 255, 0.12), 0 10px 30px rgba(5, 8, 27, 0.28);
+        backdrop-filter: blur(5px);
+        touch-action: none;
+        user-select: none;
+        -webkit-user-select: none;
+        z-index: 3;
+      }
+      .touch-controls {
+        display: none;
+        align-items: center;
+        justify-content: center;
+        gap: 14px;
+        min-height: 112px;
+        margin-top: 10px;
+        padding: 10px 14px;
+        border: 1px solid rgba(179, 193, 255, 0.18);
+        border-radius: 18px;
+        background: linear-gradient(135deg, rgba(11, 16, 43, 0.92), rgba(19, 27, 62, 0.78));
+      }
+      .touch-controls-copy {
+        max-width: 170px;
+        color: var(--muted);
+        font-size: 11px;
+        line-height: 1.45;
+      }
+      .touch-controls-copy strong {
+        display: block;
+        margin-bottom: 3px;
+        color: var(--ink);
+        font-size: 12px;
+      }
+      #spitButton {
+        min-width: 96px;
+        touch-action: none;
+        user-select: none;
+        -webkit-user-select: none;
+        background: linear-gradient(135deg, #ff9a62, #ffd36b);
+      }
+      #spitButton.charging {
+        transform: translateY(1px) scale(0.98);
+        background: linear-gradient(135deg, #ff315f, #ff9f43);
+        box-shadow: 0 0 0 3px rgba(255, 49, 95, 0.2), 0 0 24px rgba(255, 159, 67, 0.38);
+      }
+      #spitButton.super-ready {
+        color: #07101f;
+        background: linear-gradient(135deg, #68e7ff, #fff176);
+        box-shadow: 0 0 0 4px rgba(104, 231, 255, 0.28), 0 0 32px rgba(255, 241, 118, 0.62);
+        animation: super-ready-pulse 700ms ease-in-out infinite alternate;
+      }
+      @keyframes super-ready-pulse {
+        from { transform: scale(1); }
+        to { transform: scale(1.055); }
+      }
+      .joystick-knob {
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        width: 48px;
+        height: 48px;
+        margin: -24px;
+        border: 1px solid rgba(255, 255, 255, 0.46);
+        border-radius: 50%;
+        background: rgba(104, 231, 255, 0.48);
+        box-shadow: 0 8px 24px rgba(5, 8, 27, 0.3);
+        pointer-events: none;
+        transform: translate3d(0, 0, 0);
+      }
+      .level-progress { margin-top: 12px; }
+      .level-progress-copy { display: flex; justify-content: space-between; gap: 8px; margin-bottom: 6px; color: var(--muted); font-size: 10px; }
+      .progress-track { height: 8px; overflow: hidden; border-radius: 999px; background: rgba(7, 10, 28, 0.72); }
+      .progress-fill { width: 0; height: 100%; border-radius: inherit; background: linear-gradient(90deg, var(--blue), var(--cyan), var(--orange)); transition: width 240ms ease; }
+      .victory-banner {
+        position: absolute;
+        inset: 0;
+        display: grid;
+        place-items: center;
+        padding: 24px;
+        color: #fff;
+        background: rgba(8, 11, 27, 0.62);
+        font-size: clamp(28px, 7vw, 64px);
+        font-weight: 900;
+        letter-spacing: -0.04em;
+        text-align: center;
+        pointer-events: none;
+        opacity: 0;
+        transition: opacity 220ms ease;
+        z-index: 4;
+      }
+      .victory-banner.visible { opacity: 1; }
+      .hyperdrive-banner {
+        position: absolute;
+        inset: 0;
+        display: grid;
+        place-items: center;
+        padding: 20px;
+        color: #fff;
+        font-size: clamp(24px, 6vw, 66px);
+        font-weight: 1000;
+        letter-spacing: 0.04em;
+        text-align: center;
+        text-shadow: -5px 0 #ff1bd1, 5px 0 #00ecff, 0 0 28px #fff;
+        pointer-events: none;
+        opacity: 0;
+        z-index: 6;
+      }
+      .hyperdrive-banner.visible { animation: hyperdrive-banner 500ms ease-out both; }
+      .emp-flash {
+        position: absolute;
+        inset: 0;
+        background: #fff;
+        pointer-events: none;
+        opacity: 0;
+        z-index: 7;
+      }
+      .emp-flash.visible { animation: emp-flash 300ms ease-out both; }
+      .canvas-wrap.hyperdrive-transition {
+        animation: hyperdrive-shake 500ms cubic-bezier(.2,.8,.2,1);
+      }
+      .canvas-wrap.hyperdrive-transition canvas {
+        animation: chromatic-shift 500ms steps(5, end);
+      }
+      @keyframes hyperdrive-banner {
+        0% { opacity: 0; transform: translateX(-30%) scale(1.4) skewX(-12deg); }
+        22%, 72% { opacity: 1; }
+        100% { opacity: 0; transform: translateX(30%) scale(.88) skewX(8deg); }
+      }
+      @keyframes emp-flash {
+        0% { opacity: .98; }
+        30% { opacity: .72; }
+        100% { opacity: 0; }
+      }
+      @keyframes hyperdrive-shake {
+        0%, 100% { transform: translate(0); }
+        15% { transform: translate(-9px, 5px); }
+        30% { transform: translate(10px, -6px); }
+        45% { transform: translate(-7px, -4px); }
+        60% { transform: translate(8px, 5px); }
+        75% { transform: translate(-4px, 2px); }
+      }
+      @keyframes chromatic-shift {
+        0%, 100% { filter: none; }
+        20% { filter: drop-shadow(-8px 0 #ff1bd1) drop-shadow(8px 0 #00ecff) contrast(1.5); }
+        60% { filter: drop-shadow(10px 0 #ff1bd1) drop-shadow(-10px 0 #00ecff) saturate(2); }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .hyperdrive-banner.visible, .emp-flash.visible,
+        .canvas-wrap.hyperdrive-transition, .canvas-wrap.hyperdrive-transition canvas {
+          animation-duration: 1ms;
+        }
+      }
+
+      .sidebar { display: flex; flex-direction: column; gap: 18px; }
+      .info-panel { padding: 20px; border-radius: 24px; }
+      .info-panel h2 { margin-bottom: 14px; font-size: 17px; letter-spacing: -0.02em; }
+
+      .join-form { display: flex; gap: 8px; margin-bottom: 18px; }
+      .join-form input {
+        width: 100%;
+        min-width: 0;
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        padding: 10px 11px;
+        color: var(--ink);
+        background: rgba(5, 8, 27, 0.56);
+      }
+      .join-form button { padding: 10px 13px; white-space: nowrap; }
+      .reset-button {
+        width: 100%;
+        margin: 10px 0 18px;
+        padding: 11px 13px;
+        color: #061017;
+        background: var(--cyan);
+      }
+      .reset-button[hidden] { display: none; }
+      .sr-only {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border: 0;
+      }
+
+      .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+      .dashboard-link {
+        display: block; margin-top: 12px; padding: 11px 14px; border-radius: 14px;
+        color: #061017; background: var(--cyan); font-weight: 800;
+        text-align: center; text-decoration: none;
+      }
+      .dashboard-link[hidden] { display: none; }
+      .stat { padding: 12px; border: 1px solid var(--line); border-radius: 14px; background: rgba(7, 10, 28, 0.42); }
+      .stat small { display: block; color: var(--muted); font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; }
+      .stat strong { display: block; margin-top: 3px; font-size: 22px; letter-spacing: -0.04em; }
+
+      .leaderboard { display: grid; gap: 9px; margin: 0; padding: 0; list-style: none; }
+      .leaderboard li { display: flex; align-items: center; justify-content: space-between; gap: 12px; color: var(--muted); }
+      .leaderboard li strong { color: var(--ink); font-size: 13px; }
+      .leaderboard li span { color: var(--cyan); font-variant-numeric: tabular-nums; }
+      .empty { color: var(--muted); font-size: 13px; }
+      .shop-grid { display: grid; gap: 9px; }
+      .shop-intro { margin: -4px 0 14px; color: var(--muted); font-size: 12px; line-height: 1.45; }
+      .shop-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 10px;
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        background: rgba(7, 10, 28, 0.42);
+      }
+      .shop-item strong { display: block; font-size: 13px; }
+      .shop-item small { display: block; color: var(--muted); font-size: 11px; }
+      .shop-item em { display: block; margin-top: 3px; color: var(--cyan); font-size: 10px; font-style: normal; letter-spacing: 0.08em; text-transform: uppercase; }
+      .shop-item button { flex: 0 0 auto; padding: 8px 11px; font-size: 12px; }
+      .shop-item button:disabled { color: #939bb7; background: #272d4c; cursor: not-allowed; filter: none; transform: none; }
+      .cabinet-item.utility .preview-swatch {
+        display: grid;
+        place-items: center;
+        color: #ff7aa8;
+        background: radial-gradient(circle, rgba(255, 122, 168, 0.34), rgba(111, 124, 255, 0.12));
+        box-shadow: 0 0 24px rgba(255, 122, 168, 0.34);
+      }
+      .cabinet-item.utility .preview-swatch::before { content: "♥"; font-size: 28px; }
+      .payment-notice { margin: 12px 0 0; color: var(--muted); font-size: 11px; }
+      .payment-notice.ready { color: #74e6a4; }
+      .payment-notice.error { color: #ffb29a; }
+      .admin-portal-trigger {
+        padding: 8px 11px;
+        color: var(--ink);
+        background: rgba(7, 10, 28, 0.64);
+        border: 1px solid var(--line);
+        font-size: 11px;
+      }
+      .admin-portal-trigger:disabled {
+        color: #939bb7;
+        background: #272d4c;
+        cursor: not-allowed;
+        filter: none;
+        transform: none;
+      }
+      #adminPortalForm { display: grid; gap: 9px; }
+      #adminPortalForm label { color: var(--muted); font-size: 12px; }
+      #adminPortalForm input, #adminPortalForm select {
+        width: 100%;
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        padding: 10px 11px;
+        color: var(--ink);
+        background: rgba(5, 8, 27, 0.76);
+      }
+      .web3-portal {
+        margin: 18px 0;
+        padding: 22px;
+        border: 1px solid rgba(104, 231, 255, 0.24);
+        border-radius: 26px;
+        background: linear-gradient(135deg, rgba(111, 124, 255, 0.15), rgba(18, 23, 48, 0.86));
+        box-shadow: var(--shadow);
+      }
+      .web3-head { display: flex; align-items: start; justify-content: space-between; gap: 18px; }
+      .web3-head h2 { margin-bottom: 5px; font-size: clamp(24px, 4vw, 38px); }
+      .web3-head p { max-width: 620px; margin-bottom: 0; color: var(--muted); }
+      .wallet-options { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 18px; }
+      .wallet-options button { color: var(--ink); background: rgba(7, 10, 28, 0.64); border: 1px solid var(--line); border-radius: 15px; }
+      .web3-body { display: grid; grid-template-columns: 0.9fr 1.1fr; gap: 14px; margin-top: 14px; }
+      .balance-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+      .swap-box { padding: 15px; border: 1px solid var(--line); border-radius: 18px; background: rgba(7, 10, 28, 0.52); }
+      .swap-row { display: flex; align-items: center; gap: 10px; }
+      .swap-row input { min-width: 0; width: 100%; border: 1px solid var(--line); border-radius: 12px; padding: 11px; color: var(--ink); background: rgba(5, 8, 27, 0.76); }
+      .swap-actions { display: flex; gap: 9px; margin-top: 10px; }
+      .swap-actions button { flex: 1; }
+      .swap-actions button:disabled, .wallet-options button:disabled { opacity: 0.45; cursor: not-allowed; transform: none; filter: none; }
+      .web3-status { margin: 11px 0 0; color: var(--muted); font-size: 12px; }
+      .wallet-dialog-status { min-height: 1.5em; margin: 14px 0 0; color: var(--muted); font-size: 13px; }
+      .wallet-dialog-status.error { color: #ffb29a; }
+      .dialog {
+        position: fixed;
+        inset: 0;
+        z-index: 20;
+        width: 100%;
+        max-width: none;
+        height: 100%;
+        max-height: none;
+        margin: 0;
+        padding:
+          max(16px, var(--safe-area-inset-top))
+          max(16px, var(--safe-area-inset-right))
+          max(16px, var(--safe-area-inset-bottom))
+          max(16px, var(--safe-area-inset-left));
+        overflow: auto;
+        border: 0;
+        color: var(--ink);
+        background: rgba(5, 8, 27, 0.82);
+        overscroll-behavior: contain;
+      }
+      .dialog::backdrop { background: rgba(5, 8, 27, 0.82); }
+      .dialog-card {
+        position: relative;
+        width: min(520px, 100%);
+        max-height: 100%;
+        margin: auto;
+        padding: 24px;
+        overflow: auto;
+        border: 1px solid var(--line);
+        border-radius: 24px;
+        background: #121730;
+        box-shadow: var(--shadow);
+      }
+      .dialog[open] { display: grid; }
+      .dialog-close {
+        position: absolute;
+        top: 14px;
+        right: 14px;
+        min-width: 44px;
+        min-height: 44px;
+        padding: 8px;
+        color: var(--ink);
+        background: rgba(7, 10, 28, 0.64);
+        border: 1px solid var(--line);
+      }
+      .dialog h2 { margin: 0 52px 8px 0; }
+      .dialog p { color: var(--muted); }
+      .dialog-actions { display: flex; gap: 10px; margin-top: 20px; }
+      .dialog-actions button { min-height: 44px; flex: 1; }
+      .dialog-secondary { color: var(--ink); background: rgba(7, 10, 28, 0.64); border: 1px solid var(--line); }
+      body:has(.dialog[open]) { overflow: hidden; }
+
+      .notes { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; margin-top: 18px; }
+      .notes p { margin-bottom: 0; color: var(--muted); font-size: 13px; }
+      .notes strong { display: block; margin-bottom: 5px; color: var(--ink); }
+      .tokenomics-panel {
+        margin-top: 18px;
+        padding: 24px;
+        border: 1px solid rgba(104, 231, 255, 0.24);
+        border-radius: 24px;
+        background: linear-gradient(135deg, rgba(111, 124, 255, 0.13), rgba(7, 10, 28, 0.78));
+        box-shadow: var(--shadow);
+      }
+      .tokenomics-panel h2 { margin: 0 0 6px; font-size: clamp(22px, 3vw, 30px); }
+      .tokenomics-intro { margin: 0 0 18px; color: var(--muted); font-size: 13px; }
+      .tokenomics-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+      .tokenomics-metric {
+        padding: 16px;
+        border: 1px solid var(--line);
+        border-radius: 16px;
+        background: rgba(7, 10, 28, 0.5);
+      }
+      .tokenomics-metric strong {
+        display: block;
+        margin-bottom: 7px;
+        color: var(--cyan);
+        font-size: 11px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+      .tokenomics-metric p { margin: 0; color: var(--ink); font-size: 14px; line-height: 1.55; }
+      .crypto-risk-warning {
+        color: var(--ink);
+        background: linear-gradient(135deg, rgba(255, 77, 77, 0.12), rgba(7, 10, 28, 0.88));
+        box-shadow: var(--shadow);
+        font-size: 14px;
+        line-height: 1.6;
+      }
+      .crypto-risk-warning > strong { display: block; color: #ffb3b3; }
+      .crypto-risk-warning ul { margin-bottom: 0; }
+      .crypto-risk-warning li + li { margin-top: 8px; }
+      .crypto-risk-warning li strong { color: var(--ink); }
+
+      /* In-Game Cabinet */
+      .cabinet-dialog {
+        position: fixed;
+        top: max(16px, var(--safe-area-inset-top));
+        right: max(16px, var(--safe-area-inset-right));
+        bottom: auto;
+        left: auto;
+        width: 340px;
+        max-width: calc(100vw - 32px);
+        max-height: calc(100vh - 32px - var(--safe-area-inset-bottom) - var(--safe-area-inset-top));
+        margin: 0;
+        padding: 0;
+        border: 1px solid rgba(104, 231, 255, 0.3);
+        background: rgba(10, 14, 38, 0.75);
+        backdrop-filter: blur(12px);
+        color: var(--ink);
+        border-radius: 20px;
+        box-shadow: 0 24px 60px rgba(5, 8, 27, 0.8), inset 0 0 32px rgba(104, 231, 255, 0.05);
+        z-index: 100;
+        overscroll-behavior: contain;
+      }
+      .cabinet-dialog[open] {
+        display: flex;
+        flex-direction: column;
+      }
+      .cabinet-dialog::backdrop {
+        background: none;
+      }
+      .cabinet-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 16px;
+        border-bottom: 1px solid var(--line);
+      }
+      .cabinet-header h2 {
+        margin: 0;
+        font-size: 14px;
+        color: var(--cyan);
+        text-transform: uppercase;
+        letter-spacing: 0.15em;
+        font-weight: 800;
+      }
+      .cabinet-close {
+        background: transparent;
+        border: none;
+        color: var(--muted);
+        font-size: 24px;
+        line-height: 1;
+        padding: 0 8px;
+        cursor: pointer;
+        border-radius: 6px;
+      }
+      .cabinet-close:hover {
+        color: var(--ink);
+        background: rgba(255, 255, 255, 0.1);
+      }
+      .cabinet-status-bar {
+        padding: 10px 16px;
+        font-size: 11px;
+        color: var(--orange);
+        background: rgba(255, 154, 98, 0.08);
+        border-bottom: 1px solid rgba(255, 154, 98, 0.2);
+        text-align: center;
+        line-height: 1.4;
+      }
+      .cabinet-status-bar:empty {
+        display: none;
+      }
+      .cabinet-status-bar.error {
+        color: #ffb29a;
+        background: rgba(255, 178, 154, 0.08);
+        border-bottom-color: rgba(255, 178, 154, 0.2);
+      }
+      .cabinet-status-bar.ready {
+        color: #74e6a4;
+        background: rgba(116, 230, 164, 0.08);
+        border-bottom-color: rgba(116, 230, 164, 0.2);
+      }
+      .cabinet-list {
+        padding: 16px;
+        overflow-y: auto;
+        display: grid;
+        gap: 12px;
+        flex: 1;
+      }
+      .cabinet-item {
+        display: flex;
+        gap: 14px;
+        padding: 12px;
+        background: rgba(18, 23, 48, 0.6);
+        border: 1px solid rgba(179, 193, 255, 0.12);
+        border-radius: 14px;
+        transition: border-color 200ms ease;
+      }
+      .cabinet-item:hover {
+        border-color: rgba(104, 231, 255, 0.4);
+      }
+      .cabinet-preview {
+        flex: 0 0 52px;
+        height: 52px;
+        border-radius: 10px;
+        background: linear-gradient(135deg, rgba(7, 10, 28, 0.8), rgba(18, 23, 48, 0.8));
+        border: 1px solid var(--line);
+        display: grid;
+        place-items: center;
+      }
+      .preview-swatch {
+        width: 24px;
+        height: 24px;
+        border-radius: 4px;
+        background: linear-gradient(135deg, var(--skin-body, #f6edff), var(--skin-accent, #d68cff));
+        border: 1px solid color-mix(in srgb, var(--skin-glow, #63f6ff), white 25%);
+        box-shadow: 0 0 12px color-mix(in srgb, var(--skin-glow, #63f6ff), transparent 35%);
+      }
+      .preview-aurora-skin {
+        background: linear-gradient(135deg, #00ecff, #ff1bd1);
+        box-shadow: 0 0 10px rgba(255, 27, 209, 0.5);
+      }
+      .preview-midnight-skin {
+        background: #060913;
+        border: 1px solid #6f7cff;
+        box-shadow: 0 0 10px rgba(111, 124, 255, 0.5);
+      }
+      .cabinet-info {
+        flex: 1;
+        min-width: 0;
+      }
+      .cabinet-info strong {
+        display: block;
+        font-size: 14px;
+        color: var(--ink);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .cabinet-info p {
+        margin: 4px 0 8px;
+        font-size: 11px;
+        color: var(--muted);
+        line-height: 1.35;
+      }
+      .cabinet-actions {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+      .cabinet-price {
+        font-size: 12px;
+        font-weight: 800;
+        color: var(--cyan);
+      }
+      .cabinet-btn {
+        padding: 6px 14px;
+        font-size: 11px;
+        font-weight: 800;
+        border-radius: 8px;
+        background: var(--blue);
+        color: #fff;
+        border: none;
+        cursor: pointer;
+      }
+      .cabinet-btn:disabled {
+        background: #272d4c;
+        color: #939bb7;
+        cursor: not-allowed;
+      }
+      .cabinet-btn.equipped {
+        background: transparent;
+        border: 1px solid var(--cyan);
+        color: var(--cyan);
+      }
+
+      @media (max-width: 840px) {
+        .game-layout { grid-template-columns: 1fr; }
+        .sidebar { display: grid; grid-template-columns: 1fr 1fr; }
+        .web3-body { grid-template-columns: 1fr; }
+      }
+      @media (hover: none), (pointer: coarse) {
+        .touch-controls { display: flex; }
+        .joystick { display: block; }
+        .canvas-help {
+          left: 10px;
+          right: 10px;
+          bottom: 8px;
+          max-width: none;
+          text-align: center;
+        }
+      }
+
+      @media (max-width: 600px) {
+        .cabinet-dialog {
+          top: max(16px, var(--safe-area-inset-top));
+          bottom: auto;
+          right: 16px;
+          left: 16px;
+          width: auto;
+          max-width: none;
+          max-height: 60vh;
+        }
+        .shell {
+          width: min(calc(100% - 24px), 1180px);
+          padding-top: max(12px, var(--safe-area-inset-top));
+          padding-bottom: max(32px, var(--safe-area-inset-bottom));
+        }
+        .topbar { align-items: flex-start; flex-wrap: wrap; padding: 12px; }
+        .wallet-row { align-items: flex-end; flex-direction: column; gap: 6px; }
+        .wallet-row button { max-width: 100%; }
+        .wallet-status { display: none; }
+        .eyebrow { margin-top: 30px; }
+        .canvas-wrap { min-height: 0; }
+        .touch-controls { min-height: 102px; }
+        .joystick { width: 78px; height: 78px; }
+        .joystick-knob { width: 40px; height: 40px; margin: -20px; }
+        .sidebar, .notes { display: grid; grid-template-columns: 1fr; }
+        .tokenomics-panel { padding: 18px; }
+        .tokenomics-grid { grid-template-columns: 1fr; }
+        .join-form { flex-direction: column; }
+        .wallet-options { grid-template-columns: 1fr; }
+        .web3-head { flex-direction: column; }
+        .dialog-card { padding: 20px; }
+        .dialog-actions { flex-direction: column-reverse; }
+      }
+    </style>
+  </head>
+  <body data-backend="">
+    <main class="shell">
+      <header class="topbar">
+        <div class="brand" aria-label="TLAMA Arcade">
+          <div class="mark" aria-hidden="true">TL</div>
+          <div>
+            <strong>TLAMA ARCADE</strong>
+            <small>Multiplayer prototype</small>
+          </div>
+        </div>
+        <div class="wallet-row">
+          <span id="walletStatus" class="wallet-status">Wallet template · no transaction</span>
+          <button id="walletButton" type="button">Connect Solana wallet</button>
+        </div>
+      </header>
+
+      <p class="eyebrow">TrustLlama community game</p>
+      <h1>Collect the light.<br /><span>Keep it moving.</span></h1>
+      <p class="lede">A small multiplayer canvas room for testing real-time play. Move your llama, collect glowing orbs, and climb a leaderboard with a mandatory TLAMA match ticket and cosmetic-only llama skins.</p>
+
+      <section id="web3Portal" class="web3-portal" aria-labelledby="web3Title">
+        <div class="web3-head">
+          <div>
+            <h2 id="web3Title">Web3 onboarding</h2>
+            <p>Connect through a standard Solana wallet adapter, inspect live SOL and TLAMA balances, and review a Raydium SOL-to-TLAMA quote before wallet approval.</p>
+          </div>
+          <span class="connection">Self-custody · no auto-signing</span>
+        </div>
+        <div class="wallet-options" aria-label="Choose a Solana wallet">
+          <button type="button" data-wallet-adapter="phantom">Phantom</button>
+          <button type="button" data-wallet-adapter="solflare">Solflare</button>
+          <button type="button" data-wallet-adapter="coinbase">Coinbase Wallet</button>
+        </div>
+        <div class="web3-body">
+          <div class="balance-grid">
+            <div class="stat"><small>Wallet</small><strong id="web3Address">Not connected</strong></div>
+            <div class="stat"><small>SOL balance</small><strong id="web3SolBalance">—</strong></div>
+            <div class="stat"><small>TLAMA balance</small><strong id="web3TlamaBalance">—</strong></div>
+            <div class="stat"><small>Network</small><strong>Mainnet gated</strong></div>
+          </div>
+          <div class="swap-box">
+            <strong>Raydium checkout</strong>
+            <div class="swap-row">
+              <label class="sr-only" for="web3SolAmount">SOL amount</label>
+              <input id="web3SolAmount" type="number" min="0" step="0.01" value="0.1" />
+              <span>SOL</span>
+            </div>
+            <p class="web3-status">Estimated receive: <strong id="web3SwapOutput">— TLAMA</strong></p>
+            <div class="swap-actions">
+              <button id="web3QuoteButton" type="button" disabled>Review quote</button>
+              <button id="web3SwapButton" type="button" disabled>Approve swap</button>
+            </div>
+          </div>
+        </div>
+        <p id="web3Status" class="web3-status">Disabled until verified public Web3 settings are supplied.</p>
+      </section>
+
+      <section class="game-layout" aria-label="TLAMA Arcade game">
+        <div class="game-panel">
+          <div class="game-toolbar">
+            <div id="connection" class="connection"><i aria-hidden="true"></i><span>Waiting for game server</span></div>
+            <div class="connection">Entry fee: <strong id="entryFee">25 TLAMA / match</strong></div>
+            <button id="shopOverlayButton" class="admin-portal-trigger" type="button" aria-haspopup="dialog" style="color: #fff; background: linear-gradient(135deg, rgba(104, 231, 255, 0.15), rgba(111, 124, 255, 0.15)); border-color: var(--cyan);">Prize Cabinet</button>
+            <button id="adminPortalButton" class="admin-portal-trigger" type="button" disabled aria-haspopup="dialog">Admin testing unavailable</button>
+            <button id="soundButton" type="button" aria-pressed="false">Sound off</button>
+            <button id="vibrationButton" type="button" aria-pressed="true" hidden>Vibration on</button>
+          </div>
+          <div class="canvas-wrap">
+            <canvas id="gameCanvas" aria-label="TLAMA Arcade game board"></canvas>
+            <div id="victoryBanner" class="victory-banner" role="status" aria-live="polite">Victory!</div>
+            <div id="gameOverBanner" class="victory-banner" role="status" aria-live="assertive">Game over</div>
+            <div id="hyperdriveBanner" class="hyperdrive-banner" role="status" aria-live="polite">HYPER-DRIVE ENGAGED</div>
+            <div id="castleBanner" class="hyperdrive-banner" role="status" aria-live="polite">MOONKEEP UNSEALED</div>
+            <div id="labyrinthBanner" class="hyperdrive-banner" role="status" aria-live="polite">QUANTUM MAZE UNLOCKED</div>
+            <div id="empFlash" class="emp-flash" aria-hidden="true"></div>
+          <div class="canvas-help">Move: WASD / arrows / touch · collect the orbs</div>
+          </div>
+          <div class="touch-controls" aria-label="Touch controls">
+            <div id="joystick" class="joystick" aria-label="Touch movement joystick">
+              <div id="joystickKnob" class="joystick-knob"></div>
+            </div>
+            <div class="touch-controls-copy">
+              <strong>Touch movement</strong>
+              Drag in any direction. The control stays below the arena so the full course remains visible.
+            </div>
+            <button id="spitButton" type="button" aria-label="Spit projectile" aria-pressed="false">Spit</button>
+          </div>
+        </div>
+
+        <aside class="sidebar">
+          <section class="info-panel">
+            <h2>Join the room</h2>
+            <form id="joinForm" class="join-form">
+              <label class="sr-only" for="playerName">Nickname</label>
+              <input id="playerName" minlength="2" maxlength="18" required placeholder="Enter your nickname" autocomplete="nickname" />
+              <button type="submit">Enter</button>
+            </form>
+            <button id="resetButton" class="reset-button" type="button" hidden>Play again</button>
+            <div class="stat-grid">
+              <div class="stat"><small>Your score</small><strong id="score">0</strong></div>
+              <div class="stat"><small>Lives</small><strong id="lives">3</strong></div>
+              <div class="stat"><small>Orbs</small><strong id="orbs">0</strong></div>
+              <div class="stat"><small>Super charge</small><strong id="superCharge">0%</strong></div>
+              <div class="stat"><small>Oxygen</small><strong id="oxygen">100%</strong></div>
+              <div class="stat"><small>Current level</small><strong id="currentLevel">1</strong></div>
+              <div class="stat"><small>Stage</small><strong id="levelName">The Andean Pastures</strong></div>
+              <div class="stat"><small>Players</small><strong id="playerCount">0</strong></div>
+            </div>
+            <div class="level-progress" aria-label="Level progress">
+              <div class="level-progress-copy"><span id="progressLabel">Next level: 101 points</span><span id="progressPercent">0%</span></div>
+              <div class="progress-track"><div id="progressFill" class="progress-fill"></div></div>
+            </div>
+            <a id="dashboardLink" class="dashboard-link" hidden>View player dashboard</a>
+          </section>
+          <section class="info-panel">
+            <h2>Simulated leaderboard</h2>
+            <ol id="leaderboard" class="leaderboard"><li class="empty">Connect to a game server to begin.</li></ol>
+          </section>
+          <section class="info-panel">
+            <h2>Arcade economy</h2>
+            <p class="shop-intro">Every match requires one entry ticket. Skins are cosmetic only. The configured settlement hook routes 100% of each purchase to the 10% Game Rewards Vault.</p>
+            <div id="shop" class="shop-grid"></div>
+            <p id="paymentNotice" class="payment-notice">Live purchases are disabled until an audited vault settlement hook is installed.</p>
+          </section>
+        </aside>
+      </section>
+
+      <section class="notes" aria-label="Prototype notes">
+        <div class="info-panel"><strong>Server-authoritative</strong><p>Start with three lives and a 10-second shield. Reach Level 6 to unlock up to two Heart Matrix upgrades; orb rewards restore lives only to the server-authoritative match cap.</p></div>
+        <div class="info-panel"><strong>Guarded transactions</strong><p>Swaps and game purchases require verified public configuration, a user click, final wallet approval, and the audited vault settlement hook.</p></div>
+        <div class="info-panel"><strong>Rewards vault</strong><p>100,000,000 TLAMA (10% of total supply) is reserved by fixed code for automated player rewards and leaderboard payouts only.</p></div>
+      </section>
+
+      <section class="tokenomics-panel" aria-labelledby="tokenomicsTitle">
+        <h2 id="tokenomicsTitle">TLAMA Tokenomics</h2>
+        <p class="tokenomics-intro">Fixed ecosystem metrics for investor review.</p>
+        <div class="tokenomics-grid">
+          <article class="tokenomics-metric">
+            <strong>Total Token Supply</strong>
+            <p>1,000,000,000 (1 Billion) TLAMA Tokens Minted</p>
+          </article>
+          <article class="tokenomics-metric">
+            <strong>Ecosystem Vault Split</strong>
+            <p>89% DEX Liquidity / 10% Rewards Loop / 1% Founder Allocation</p>
+          </article>
+          <article class="tokenomics-metric">
+            <strong>Programmatic Token Tax</strong>
+            <p>0.5% Buy Tax Burn / 1.0% Sell Tax Burn</p>
+          </article>
+          <article class="tokenomics-metric">
+            <strong>Anti-Whale Architecture</strong>
+            <p>0.5% Max Single Transaction Limit / 1.0% Max Wallet Hold</p>
+          </article>
+        </div>
+      </section>
+
+      <div class="crypto-risk-warning" role="note" aria-label="UK crypto risk warning" style="border: 2px solid #ff4d4d; padding: 15px; margin: 20px 0; border-radius: 8px;">
+        <strong>Don’t invest unless you’re prepared to lose all the money you invest. This is a high-risk investment and you should not expect to be protected if something goes wrong. Take 2 mins to learn more.</strong>
+        <ul style="margin-top: 10px; padding-left: 20px;">
+          <li><strong>No Regulatory Protection:</strong> Cryptoassets are completely unregulated in the UK. You will not have access to the Financial Ombudsman Service (FOS) or the Financial Services Compensation Scheme (FSCS).</li>
+          <li><strong>Utility &amp; Value Volatility:</strong> TLAMA tokens are designed strictly as an in-game utility entry fee for the TrustLlama arcade network. The value of tokens can fluctuate wildly and drop to zero.</li>
+        </ul>
+      </div>
+    </main>
+
+    <dialog id="shopOverlayDialog" class="cabinet-dialog" aria-labelledby="shopTitle">
+      <div class="cabinet-header">
+        <h2 id="shopTitle">Prize Cabinet</h2>
+        <button id="cabinetCloseButton" class="cabinet-close" type="button" aria-label="Close cabinet" data-close-dialog>×</button>
+      </div>
+      <div id="cabinetStatus" class="cabinet-status-bar" role="status" aria-live="polite"></div>
+      <div id="cabinetList" class="cabinet-list">
+        <!-- JS will populate .cabinet-item elements here -->
+      </div>
+    </dialog>
+
+    <template id="cabinetItemTemplate">
+      <div class="cabinet-item" data-skin-id="">
+        <div class="cabinet-preview">
+          <div class="preview-swatch" data-preview-class></div>
+        </div>
+        <div class="cabinet-info">
+          <strong data-label>Skin Name</strong>
+          <p data-description>Skin description.</p>
+          <div class="cabinet-actions">
+            <span class="cabinet-price" data-price></span>
+            <button type="button" class="cabinet-btn" data-action-btn></button>
+          </div>
+        </div>
+      </div>
+    </template>
+
+    <dialog id="walletDialog" class="dialog" aria-labelledby="walletDialogTitle">
+      <div class="dialog-card">
+        <button class="dialog-close" type="button" data-close-dialog aria-label="Close wallet dialog">×</button>
+        <h2 id="walletDialogTitle">Connect a Solana wallet</h2>
+        <p>Choose the wallet you want to use. You will still approve every transaction in your wallet.</p>
+        <div class="wallet-options" aria-label="Wallet connection choices">
+          <button type="button" data-dialog-wallet="phantom">Connect Phantom</button>
+          <button type="button" data-dialog-wallet="solflare">Connect Solflare</button>
+          <button type="button" data-dialog-wallet="coinbase">Connect Coinbase Wallet</button>
+        </div>
+        <p id="walletDialogStatus" class="wallet-dialog-status" role="status" aria-live="polite">
+          Select a wallet to continue.
+        </p>
+      </div>
+    </dialog>
+
+    <dialog id="purchaseDialog" class="dialog" aria-labelledby="purchaseDialogTitle">
+      <div class="dialog-card">
+        <button class="dialog-close" type="button" data-close-dialog aria-label="Close purchase dialog">×</button>
+        <h2 id="purchaseDialogTitle">Review purchase</h2>
+        <p id="purchaseDialogCopy"></p>
+        <p>Your wallet will show the final transaction before signing.</p>
+        <div class="dialog-actions">
+          <button id="cancelPurchaseButton" class="dialog-secondary" type="button">Cancel</button>
+          <button id="confirmPurchaseButton" type="button">Continue to wallet</button>
+        </div>
+      </div>
+    </dialog>
+
+    <dialog id="adminPortalDialog" class="dialog" aria-labelledby="adminPortalTitle">
+      <div class="dialog-card">
+        <button class="dialog-close" type="button" data-close-dialog aria-label="Close admin testing dialog">×</button>
+        <h2 id="adminPortalTitle">Admin testing portal</h2>
+        <p>Choose a level to reset your currently joined player. The operator password is used only for this request and is never saved.</p>
+        <form id="adminPortalForm">
+          <label for="adminPassword">Operator password</label>
+          <input id="adminPassword" type="password" required maxlength="512" autocomplete="off" />
+          <label for="adminLevel">Starting level</label>
+          <select id="adminLevel">
+            <option value="1">1 · The Andean Pastures</option>
+            <option value="2">2 · Electric Woodlands</option>
+            <option value="3">3 · Plasma Farm</option>
+            <option value="4">4 · The Haunted Moonkeep</option>
+            <option value="5">5 · Quantum Llama Labyrinth</option>
+            <option value="6">6 · Llama Labyrinth</option>
+            <option value="7">7 · Llamacopter Caverns</option>
+            <option value="8">8 · Llama Submarine Deep-Sea Trench</option>
+            <option value="9">9 · Llama Sky Kingdom</option>
+            <option value="10">10 · Trust Llama Citadel Core</option>
+          </select>
+          <label for="adminCosmetic">Session-only cosmetic test grant</label>
+          <select id="adminCosmetic">
+            <option value="">None</option>
+            <option value="aurora-skin">Aurora llama skin</option>
+            <option value="midnight-skin">Midnight llama skin</option>
+          </select>
+          <p id="adminPortalStatus" class="wallet-dialog-status" role="status" aria-live="polite">Checking operator access…</p>
+          <div class="dialog-actions">
+            <button class="dialog-secondary" type="button" data-close-dialog>Cancel</button>
+            <button id="adminPortalSubmit" type="submit">Execute</button>
+          </div>
+        </form>
+      </div>
+    </dialog>
+
+    <script src="./config.js"></script>
+    <script type="module" src="./web3-onboarding.js"></script>
+    <script>
+      (() => {
+        "use strict";
+
+        const canvas = document.getElementById("gameCanvas");
+        const context = canvas.getContext("2d");
+        const connection = document.getElementById("connection");
+        const connectionText = connection.querySelector("span");
+        const scoreElement = document.getElementById("score");
+        const livesElement = document.getElementById("lives");
+        const orbsElement = document.getElementById("orbs");
+        const currentLevelElement = document.getElementById("currentLevel");
+        const levelNameElement = document.getElementById("levelName");
+        const progressLabel = document.getElementById("progressLabel");
+        const progressPercent = document.getElementById("progressPercent");
+        const progressFill = document.getElementById("progressFill");
+        const joystick = document.getElementById("joystick");
+        const joystickKnob = document.getElementById("joystickKnob");
+        const victoryBanner = document.getElementById("victoryBanner");
+        const gameOverBanner = document.getElementById("gameOverBanner");
+        const hyperdriveBanner = document.getElementById("hyperdriveBanner");
+        const castleBanner = document.getElementById("castleBanner");
+        const labyrinthBanner = document.getElementById("labyrinthBanner");
+        const empFlash = document.getElementById("empFlash");
+        const canvasWrap = canvas.closest(".canvas-wrap");
+        const playerCountElement = document.getElementById("playerCount");
+        const leaderboardElement = document.getElementById("leaderboard");
+        const entryFeeElement = document.getElementById("entryFee");
+        const walletButton = document.getElementById("walletButton");
+        const walletStatus = document.getElementById("walletStatus");
+        const playerName = document.getElementById("playerName");
+        const resetButton = document.getElementById("resetButton");
+        const shopElement = document.getElementById("shop");
+        const paymentNotice = document.getElementById("paymentNotice");
+        const dashboardLink = document.getElementById("dashboardLink");
+        const walletDialog = document.getElementById("walletDialog");
+        const walletDialogStatus = document.getElementById("walletDialogStatus");
+        const purchaseDialog = document.getElementById("purchaseDialog");
+        const purchaseDialogCopy = document.getElementById("purchaseDialogCopy");
+        const confirmPurchaseButton = document.getElementById("confirmPurchaseButton");
+        const cancelPurchaseButton = document.getElementById("cancelPurchaseButton");
+        const soundButton = document.getElementById("soundButton");
+        const vibrationButton = document.getElementById("vibrationButton");
+        const adminPortalButton = document.getElementById("adminPortalButton");
+        const adminPortalDialog = document.getElementById("adminPortalDialog");
+        const adminPortalForm = document.getElementById("adminPortalForm");
+        const adminPassword = document.getElementById("adminPassword");
+        const adminLevel = document.getElementById("adminLevel");
+        const adminCosmetic = document.getElementById("adminCosmetic");
+        const adminPortalStatus = document.getElementById("adminPortalStatus");
+        const shopOverlayButton = document.getElementById("shopOverlayButton");
+        const shopOverlayDialog = document.getElementById("shopOverlayDialog");
+        const cabinetStatus = document.getElementById("cabinetStatus");
+        const cabinetList = document.getElementById("cabinetList");
+        const cabinetItemTemplate = document.getElementById("cabinetItemTemplate");
+        let audioContext = null;
+        let soundEnabled = false;
+        const vibrationStorageKey = "tlama-arcade-vibration-enabled";
+        const vibrationSupported = typeof navigator.vibrate === "function";
+        const loadVibrationPreference = () => {
+          if (!vibrationSupported) return false;
+          try {
+            return window.localStorage.getItem(vibrationStorageKey) !== "false";
+          } catch (error) {
+            return true;
+          }
+        };
+        let vibrationEnabled = loadVibrationPreference();
+        let ambientTimer = null;
+        let musicStep = 0;
+        let wardenThreatActive = false;
+
+        const tone = (frequency, duration, type = "sine", volume = 0.045, delay = 0) => {
+          if (!soundEnabled || !audioContext) return;
+          const start = audioContext.currentTime + delay;
+          const oscillator = audioContext.createOscillator();
+          const gain = audioContext.createGain();
+          oscillator.type = type;
+          oscillator.frequency.setValueAtTime(frequency, start);
+          gain.gain.setValueAtTime(0.0001, start);
+          gain.gain.exponentialRampToValueAtTime(volume, start + 0.012);
+          gain.gain.exponentialRampToValueAtTime(0.0001, start + duration);
+          oscillator.connect(gain).connect(audioContext.destination);
+          oscillator.start(start);
+          oscillator.stop(start + duration + 0.03);
+        };
+
+        const playSound = (name) => {
+          if (name === "orb") [660, 880, 1100].forEach((note, index) => tone(note, 0.13, "sine", 0.05, index * 0.045));
+          if (name === "level") [220, 330, 440, 660].forEach((note, index) => tone(note, 0.24, "triangle", 0.055, index * 0.08));
+          if (name === "stun") { tone(120, 0.35, "sawtooth", 0.045); tone(72, 0.5, "square", 0.025, 0.08); }
+          if (name === "ghost") { tone(310, 0.7, "sine", 0.04); tone(155, 0.85, "sine", 0.035, 0.04); }
+          if (name === "threat") { tone(90, 0.35, "sawtooth", 0.035); tone(180, 0.28, "square", 0.022, 0.08); }
+          if (name === "entry") { tone(42, 0.9, "sine", 0.05); tone(84, 0.7, "triangle", 0.025, 0.25); }
+          if (name === "victory") [523, 659, 784, 1047].forEach((note, index) => tone(note, 0.45, "triangle", 0.06, index * 0.12));
+          if (name === "life_loss") { [150, 100, 50].forEach((note, index) => tone(note, 0.3, "sawtooth", 0.08, index * 0.1)); tone(40, 0.8, "square", 0.08, 0.3); }
+           if (name === "block_broken") { tone(95, 0.18, "square", 0.06); tone(55, 0.28, "sawtooth", 0.045, 0.05); }
+          if (name === "jump") tone(440, 0.12, "square", 0.045);
+          if (name === "block_impact") { tone(260, 0.11, "square", 0.05); tone(520, 0.12, "square", 0.04, 0.06); }
+          if (name === "projectile") tone(180, 0.2, "sawtooth", 0.04);
+          if (name === "level_clear") [523, 659, 784, 1047, 1318].forEach((note, index) => tone(note, 0.3, "square", 0.055, index * 0.09));
+           if (name === "klaxon") { tone(110, 0.28, "sawtooth"); tone(70, 0.42, "square", 0.05, 0.16); }
+           if (name === "super_spit") { tone(420, 0.16, "sawtooth"); tone(840, 0.22, "square", 0.04, 0.06); }
+           if (name === "super_ready") { tone(660, 0.1, "triangle", 0.05); tone(990, 0.16, "triangle", 0.055, 0.08); }
+           if (name === "grand_fanfare") [220, 330, 440, 660, 880, 1320].forEach((note, index) => tone(note, 0.5, "triangle", 0.07, index * 0.11));
+        };
+
+        const LEVEL_MUSIC = Object.freeze({
+          1: Object.freeze({
+            interval: 620,
+            melody: Object.freeze([523.25, 659.25, 783.99, 659.25, 587.33, 523.25, 440.00, 523.25]),
+            bass: Object.freeze([130.81, 164.81, 146.83, 130.81]),
+            leadType: "triangle",
+            leadVolume: 0.018,
+          }),
+          2: Object.freeze({
+            interval: 480,
+            melody: Object.freeze([392.00, 523.25, 659.25, 783.99, 659.25, 523.25, 698.46, 587.33]),
+            bass: Object.freeze([98.00, 130.81, 110.00, 146.83]),
+            leadType: "sine",
+            leadVolume: 0.017,
+          }),
+          3: Object.freeze({
+            interval: 360,
+            melody: Object.freeze([220.00, 329.63, 440.00, 369.99, 493.88, 440.00, 329.63, 277.18]),
+            bass: Object.freeze([73.42, 82.41, 92.50, 82.41]),
+            leadType: "square",
+            leadVolume: 0.013,
+          }),
+          4: Object.freeze({
+            interval: 700,
+            melody: Object.freeze([220.00, 261.63, 311.13, 293.66, 233.08, 207.65, 174.61, 196.00]),
+            bass: Object.freeze([55.00, 65.41, 58.27, 49.00]),
+            leadType: "sine",
+            leadVolume: 0.016,
+          }),
+          6: Object.freeze({
+            interval: 260,
+            melody: Object.freeze([110.00, 146.83, 164.81, 220.00, 196.00, 164.81]),
+            bass: Object.freeze([41.20, 55.00, 65.41]),
+            leadType: "square",
+            leadVolume: 0.012,
+          }),
+          7: Object.freeze({
+            interval: 150,
+            melody: Object.freeze([110, 165, 220, 330, 247, 196, 147, 98]),
+            bass: Object.freeze([41.2, 55, 65.4, 49]),
+            leadType: "square",
+            leadVolume: 0.016,
+          }),
+          8: Object.freeze({
+            interval: 780,
+            melody: Object.freeze([55, 65.41, 73.42, 82.41, 65.41, 49]),
+            bass: Object.freeze([27.5, 32.7, 36.7, 41.2]),
+            leadType: "sine",
+            leadVolume: 0.012,
+          }),
+          9: Object.freeze({
+            interval: 105,
+            melody: Object.freeze([262, 330, 392, 523, 392, 330, 587, 659]),
+            bass: Object.freeze([65.4, 82.4, 98, 130.8]),
+            leadType: "square",
+            leadVolume: 0.018,
+          }),
+          10: Object.freeze({
+            interval: 120,
+            melody: Object.freeze([73, 98, 123, 146, 196, 146, 123, 98]),
+            bass: Object.freeze([36, 41, 49, 55]),
+            leadType: "sawtooth",
+            leadVolume: 0.024,
+          }),
+        });
+
+        const playLevelMusicStep = () => {
+          const theme = LEVEL_MUSIC[currentLevel.number];
+          if (!theme || !soundEnabled) return;
+          const step = musicStep % theme.melody.length;
+          const noteLength = (theme.interval / 1000) * 0.82;
+          tone(theme.melody[step], noteLength, theme.leadType, theme.leadVolume);
+          if (step % 2 === 0) {
+            tone(theme.melody[(step + 2) % theme.melody.length] * 2, noteLength * 0.42, "sine", 0.006, 0.04);
+          }
+          if (step % 4 === 0) {
+            tone(theme.bass[Math.floor(step / 2) % theme.bass.length], noteLength * 2.4, currentLevel.number === 3 ? "sawtooth" : "triangle", 0.011);
+          }
+          musicStep += 1;
+        };
+
+        const scheduleAmbience = () => {
+          window.clearInterval(ambientTimer);
+          musicStep = 0;
+           if (currentLevel.number === 5 || currentLevel.number === 6) {
+            ambientTimer = window.setInterval(() => {
+              if (!soundEnabled) return;
+               tone(55, 2.5, "sawtooth", 0.015);
+               tone(82, 2.0, "square", 0.01, 0.2);
+               tone(110, 1.5, "sine", 0.02, 0.5);
+            }, 2300);
+            return;
+          }
+           const theme = LEVEL_MUSIC[currentLevel.number] || LEVEL_MUSIC[1];
+          playLevelMusicStep();
+          ambientTimer = window.setInterval(playLevelMusicStep, theme.interval);
+        };
+
+        soundButton.addEventListener("click", async () => {
+          audioContext ||= new (window.AudioContext || window.webkitAudioContext)();
+          await audioContext.resume();
+          soundEnabled = !soundEnabled;
+          soundButton.textContent = soundEnabled ? "Sound on" : "Sound off";
+          soundButton.setAttribute("aria-pressed", String(soundEnabled));
+          if (soundEnabled) {
+            playSound("level");
+            scheduleAmbience();
+          } else {
+            window.clearInterval(ambientTimer);
+          }
+        });
+
+        if (vibrationSupported) {
+          vibrationButton.hidden = false;
+          const renderVibrationPreference = () => {
+            vibrationButton.textContent = vibrationEnabled ? "Vibration on" : "Vibration off";
+            vibrationButton.setAttribute("aria-pressed", String(vibrationEnabled));
+          };
+          renderVibrationPreference();
+          vibrationButton.addEventListener("click", () => {
+            vibrationEnabled = !vibrationEnabled;
+            try {
+              window.localStorage.setItem(vibrationStorageKey, String(vibrationEnabled));
+            } catch (error) {
+              // The preference still applies to this session when storage is unavailable.
+            }
+            renderVibrationPreference();
+          });
+        }
+
+        const keys = new Set();
+        const players = new Map();
+        // Cosmetic-only direction from successive server snapshots. Prediction and
+        // controls must never change this authoritative-facing state.
+        const AUTHORITATIVE_FACING_DEADBAND = 0.0005;
+        const authoritativeFacing = new Map();
+        const authoritativePlayerX = new Map();
+        const defaultLevels = [
+          { number: 1, name: "The Andean Pastures", min_score: 0, max_score: 100, next_score: 101, speed: 0.44, board_min: 0.04, board_max: 0.96 },
+          { number: 2, name: "Electric Woodlands", min_score: 101, max_score: 250, next_score: 251, speed: 0.50, board_min: 0.10, board_max: 0.90 },
+          { number: 3, name: "Plasma Farm", min_score: 251, max_score: 500, next_score: 501, speed: 0.70, board_min: 0.08, board_max: 0.92 },
+          { number: 4, name: "The Haunted Moonkeep", min_score: 501, max_score: 650, next_score: 651, speed: 0.76, board_min: 0.07, board_max: 0.93 },
+          { number: 5, name: "The Quantum Llama Labyrinth", min_score: 651, max_score: 800, next_score: 801, speed: 0.82, board_min: 0.06, board_max: 0.94 },
+          { number: 6, name: "Llama Labyrinth", min_score: 801, max_score: 1200, next_score: 1201, speed: 0.88, board_min: 0.06, board_max: 0.94 },
+          { number: 7, name: "Llamacopter Caverns", min_score: 1201, max_score: 1600, next_score: 1601, speed: 0.94, board_min: 0.09, board_max: 0.91 },
+          { number: 8, name: "Llama Submarine Deep-Sea Trench", min_score: 1601, max_score: 2000, next_score: 2001, speed: 0.72, board_min: 0.10, board_max: 0.90 },
+           { number: 9, name: "Llama Sky Kingdom", min_score: 2001, max_score: 2400, next_score: 2401, speed: 1, board_min: 0.05, board_max: 0.95 },
+           { number: 10, name: "Trust Llama Citadel Core", min_score: 2401, max_score: null, next_score: 2800, speed: 1, board_min: 0.04, board_max: 0.96 }
+        ];
+        let levels = defaultLevels;
+         let victoryScore = 2800;
+        let currentLevel = defaultLevels[0];
+        let touchVector = { x: 0, y: 0 };
+        let activeTouchId = null;
+        let activeJoystickPointerId = null;
+          let activeCitadelPointerId = null;
+          let citadelChargeHeld = false;
+           let citadelSuperReady = false;
+        let paymentConfig = window.TLAMA_PAYMENT_CONFIG || { enabled: false, catalog: [] };
+        let connectedWallet = null;
+        let pendingWalletAdapter = "unknown";
+        let walletDialogActive = false;
+        let walletDialogCompleted = false;
+        let collectibles = {};
+        let localPlayerId = null;
+        let socket = null;
+        let lastFrame = performance.now();
+        let lastPositionSent = 0;
+        let lastCollectSent = 0;
+        let lastWardenTone = 0;
+        let localPosition = { x: 0.5, y: 0.5 };
+        let authoritativeCitadelPosition = { x: 0.5, y: 0.5 };
+        let entryTicketPurchased = false;
+        let pendingJoin = false;
+        let pendingAdminLevel = null;
+        let pendingAdminSkinId = "";
+        let skinCatalog = [];
+        let cabinetStateSignature = "";
+        let hazards = { pumas: [], logs: [], tractors: [], maze: [] };
+        let ghosts = [];
+        let localStunnedUntil = 0;
+        let localGameOver = false;
+        let localVictory = false;
+         let vehicleInputSequence = 0;
+          let level7World = { camera_progress: 0, orbs: {}, blocks: [], projectiles: [], wardens: [] };
+          let level8World = { camera_progress: 0, orbs: {}, bubbles: {}, vents: [], wardens: [], bounds: {} };
+          let level9World = { camera_progress: 0, orbs: {}, platforms: [], cloud_platforms: [], pipes: [], question_blocks: [], secret_bundles: [], wardens: [], projectiles: [] };
+          let level10World = { camera: {}, bounds: {}, boss: { hp: 300, max_hp: 300, phase: 1 }, drones: [], orbs: [], hazards: [], projectiles: [] };
+          let platformerInputSequence = 0;
+          const quantizeCitadelAxis = (value) => {
+            if (!Number.isFinite(value) || Math.abs(value) < 0.12) return 0;
+            return value > 0 ? 1 : -1;
+          };
+         const spitButton = document.getElementById("spitButton");
+         spitButton.hidden = true;
+         const renderActionButton = () => {
+            const levelNumber = Number(currentLevel.number);
+            const isPlatformer = levelNumber === 9;
+            const isCitadel = levelNumber === 10;
+            spitButton.hidden = levelNumber !== 7 && !isPlatformer && !isCitadel;
+           spitButton.disabled = localGameOver || localVictory;
+           spitButton.textContent = isCitadel
+              ? (citadelSuperReady ? "SUPER SPIT READY — release!" : citadelChargeHeld ? "Release to fire" : "Hold to charge")
+              : isPlatformer ? "Jump" : "Spit";
+           spitButton.setAttribute(
+             "aria-label",
+              isCitadel
+                ? (citadelSuperReady ? "Super Spit fully charged. Release to fire." : "Hold to charge Super Spit, then release to fire")
+                 : isPlatformer ? "Jump" : "Spit projectile",
+           );
+           spitButton.setAttribute("aria-pressed", String(isCitadel && citadelChargeHeld));
+           spitButton.classList.toggle("charging", isCitadel && citadelChargeHeld);
+            spitButton.classList.toggle("super-ready", isCitadel && citadelSuperReady);
+         };
+          const setCitadelSuperReady = (ready, { notify = true } = {}) => {
+            const nextReady = Boolean(ready);
+            if (nextReady === citadelSuperReady) return;
+            citadelSuperReady = nextReady;
+            renderActionButton();
+            if (!nextReady || !notify) return;
+            playSound("super_ready");
+            if (vibrationEnabled) navigator.vibrate([45, 35, 90]);
+          };
+         const clearCitadelCharge = ({ fire = false, sendInput = true } = {}) => {
+            const hadActiveCharge = citadelChargeHeld || activeCitadelPointerId !== null;
+           citadelChargeHeld = false;
+           activeCitadelPointerId = null;
+            setCitadelSuperReady(false, { notify: false });
+           renderActionButton();
+            if (hadActiveCharge && sendInput && currentLevel.number === 10 && !localGameOver && !localVictory) {
+             send({
+               type: "citadel_input",
+               booster_x: 0,
+               booster_y: 0,
+               charge_pressed: false,
+               fire_released: fire,
+               sequence: ++vehicleInputSequence,
+             });
+           }
+         };
+        const trails = new Map();
+        const particles = [];
+        const gridRipples = [];
+        const mobileEffectsBudget = window.matchMedia("(pointer: coarse)").matches;
+        const MAX_PARTICLES = mobileEffectsBudget ? 72 : 144;
+        const MAX_RIPPLES = mobileEffectsBudget ? 6 : 10;
+        const playerMotion = new Map();
+
+        // Original TrustLlama vector sprite sheet, dedicated to the public domain
+        // under CC0-1.0. Four 96x96 frames per row: Idle, Run, and Stunned.
+        const LLAMA_SPRITE = Object.freeze({
+          frameWidth: 96,
+          frameHeight: 96,
+          framesPerState: 4,
+          states: Object.freeze({ idle: 0, running: 1, stunned: 2 }),
+          renderSize: 0.092,
+        });
+        const SPRITE_STATE_TABLE = Object.freeze({
+          default: Object.freeze({
+            filter: "none",
+            glow: "#ff38d1",
+            body: "#f6edff",
+            accent: "#d68cff",
+          }),
+          aurora: Object.freeze({
+            filter: "hue-rotate(118deg) saturate(1.45) brightness(1.08)",
+            glow: "#63f6ff",
+            body: "#7ffcff",
+            accent: "#ff66d8",
+          }),
+          midnight: Object.freeze({
+            filter: "hue-rotate(228deg) saturate(1.35) brightness(0.78)",
+            glow: "#8b5cff",
+            body: "#7d72ff",
+            accent: "#20e3ff",
+          }),
+        });
+        const llamaSpriteImage = new Image();
+        let llamaSpriteReady = false;
+
+        const buildLlamaSpriteSheet = () => {
+          const frames = [];
+          const legPoses = {
+            idle: [
+              [0, 0, 0, 0], [1, -1, -1, 1], [0, -1, 0, 1], [-1, 1, 1, -1],
+            ],
+            running: [
+              [-7, 7, 7, -7], [7, -7, -7, 7], [-10, 10, 10, -10], [10, -10, -10, 10],
+            ],
+            stunned: [
+              [-3, 3, 3, -3], [3, -3, -3, 3], [-2, -2, 2, 2], [2, 2, -2, -2],
+            ],
+          };
+          ["idle", "running", "stunned"].forEach((state, row) => {
+            for (let frame = 0; frame < LLAMA_SPRITE.framesPerState; frame += 1) {
+              const [frontX, frontY, backX, backY] = legPoses[state][frame];
+              const bob = state === "idle" ? [0, -2, 0, 1][frame] : state === "running" ? [0, 2, -1, 1][frame] : 0;
+              const tilt = state === "stunned" ? [-7, 5, -4, 7][frame] : 0;
+              const eye = state === "stunned"
+                ? `<path d="M71 27l6 6m0-6l-6 6" stroke="#251247" stroke-width="3" stroke-linecap="round"/>`
+                : `<ellipse cx="74" cy="29" rx="2.5" ry="3" fill="#251247"/><circle cx="75" cy="28" r=".8" fill="#fff"/>`;
+              const daze = state === "stunned"
+                ? `<g fill="#65f7ff"><path d="M66 7l2 5 5 2-5 2-2 5-2-5-5-2 5-2z"/><path d="M84 14l1.5 3.5L89 19l-3.5 1.5L84 24l-1.5-3.5L79 19l3.5-1.5z"/></g>`
+                : "";
+              frames.push(`
+                <g transform="translate(${frame * 96} ${row * 96 + bob}) rotate(${tilt} 48 48)">
+                  <path d="M25 68 Q${27 + backX} ${80 + backY} ${24 + backX} 91" fill="none" stroke="#e9d9ff" stroke-width="8" stroke-linecap="round"/>
+                  <path d="M49 68 Q${51 + frontX} ${80 + frontY} ${55 + frontX} 91" fill="none" stroke="#f6edff" stroke-width="8" stroke-linecap="round"/>
+                  <path d="M20 48Q8 42 12 32Q21 37 27 42" fill="#d68cff" stroke="#6734ba" stroke-width="2.5"/>
+                  <path d="M19 42C19 34 29 31 39 33L57 38C63 40 66 48 63 58L59 68C56 75 47 78 36 76L25 73C17 70 14 61 17 52Z" fill="url(#wool)" stroke="#6734ba" stroke-width="3"/>
+                  <path d="M54 48C59 40 60 29 60 20C60 13 66 9 73 12L82 17C89 21 89 31 84 37L76 43C70 48 65 55 62 61Z" fill="url(#neck)" stroke="#6734ba" stroke-width="3"/>
+                  <path d="M62 18L58 5L69 13Z" fill="#e5b9ff" stroke="#6734ba" stroke-width="2.5"/>
+                  <path d="M76 15L84 5L84 20Z" fill="#e5b9ff" stroke="#6734ba" stroke-width="2.5"/>
+                  <path d="M81 33q9 0 8 7q-8 5-16 0" fill="#d998ff" stroke="#6734ba" stroke-width="2.5"/>
+                  ${eye}
+                  <path d="M32 45q12-10 24 0M27 57q15-10 31 1M31 67q12-8 23 0" fill="none" stroke="rgba(255,255,255,.72)" stroke-width="3.5" stroke-linecap="round"/>
+                  <path d="M21 69 Q${19 + backX} ${81 - backY} ${17 + backX} 91" fill="none" stroke="#cda1f3" stroke-width="7" stroke-linecap="round"/>
+                  <path d="M44 72 Q${43 + frontX} ${82 - frontY} ${43 + frontX} 92" fill="none" stroke="#e2c5fa" stroke-width="7" stroke-linecap="round"/>
+                  <path d="M12 90h11M38 91h11M50 90h12M12 90h10" stroke="#65f7ff" stroke-width="3" stroke-linecap="round"/>
+                  <path d="M32 49l7 5-7 5-7-5z" fill="#fff" opacity=".9"/>
+                  <circle cx="32" cy="54" r="4" fill="#ff41d0"/>
+                  ${daze}
+                </g>`);
+            }
+          });
+          return `<svg xmlns="http://www.w3.org/2000/svg" width="384" height="288" viewBox="0 0 384 288">
+            <metadata>Original TrustLlama vector sprite sheet, CC0-1.0</metadata>
+            <defs>
+              <linearGradient id="wool" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#fff"/><stop offset=".45" stop-color="#f0ccff"/><stop offset="1" stop-color="#9c59e9"/></linearGradient>
+              <linearGradient id="neck" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#fff4ff"/><stop offset="1" stop-color="#c879ed"/></linearGradient>
+            </defs>${frames.join("")}
+          </svg>`;
+        };
+
+        llamaSpriteImage.decoding = "async";
+        llamaSpriteImage.addEventListener("load", () => {
+          llamaSpriteReady = true;
+        }, { once: true });
+        llamaSpriteImage.src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(buildLlamaSpriteSheet())}`;
+
+        const spawnCollectionEffects = (x, y) => {
+          const burstSize = 12;
+          for (let index = 0; index < burstSize; index += 1) {
+            const angle = (Math.PI * 2 * index) / burstSize + Math.random() * 0.22;
+            const speed = 0.11 + Math.random() * 0.17;
+            particles.push({
+              x,
+              y,
+              vx: Math.cos(angle) * speed,
+              vy: Math.sin(angle) * speed,
+              life: 1,
+              size: 0.0028 + Math.random() * 0.0035,
+              color: currentLevel.number === 1
+                ? (index % 2 === 0 ? "#ffca45" : "#e35442")
+                : (index % 2 === 0 ? "#63f6ff" : "#ff38d1"),
+            });
+          }
+          if (particles.length > MAX_PARTICLES) {
+            particles.splice(0, particles.length - MAX_PARTICLES);
+          }
+          gridRipples.push({ x, y, life: 1 });
+          if (gridRipples.length > MAX_RIPPLES) gridRipples.shift();
+        };
+
+        const collectionPoint = (message) => {
+          const nextCollectibles = message.collectibles || {};
+          for (const [orbId, previous] of Object.entries(collectibles)) {
+            const next = nextCollectibles[orbId];
+            if (next && (next.x !== previous.x || next.y !== previous.y)) return previous;
+          }
+          const collector = (message.players || []).find(
+            (player) => player.player_id === message.player_id
+          );
+          return collector ? { x: collector.x, y: collector.y } : null;
+        };
+
+        const resizeCanvas = () => {
+          const rect = canvas.getBoundingClientRect();
+          const ratio = Math.max(1, Math.min(2, window.devicePixelRatio || 1));
+          canvas.width = Math.floor(rect.width * ratio);
+          canvas.height = Math.floor(rect.height * ratio);
+          context.setTransform(canvas.width, 0, 0, canvas.height, 0, 0);
+        };
+        window.addEventListener("resize", resizeCanvas);
+        resizeCanvas();
+
+        const setConnection = (online, text) => {
+          connection.classList.toggle("online", online);
+          connectionText.textContent = text;
+        };
+
+        const wsUrl = () => {
+          const configured = document.body.dataset.backend;
+          if (configured) return configured;
+          if (location.protocol === "http:" || location.protocol === "https:") {
+            const protocol = location.protocol === "https:" ? "wss:" : "ws:";
+            return new URL("./ws", `${location.href.replace(/\/?$/, "/")}`).href.replace(/^http/, "ws");
+          }
+          return "ws://127.0.0.1:8000/ws";
+        };
+
+        const createPlayerKey = () => {
+          if (window.crypto && typeof window.crypto.randomUUID === "function") {
+            return window.crypto.randomUUID();
+          }
+          const bytes = new Uint8Array(16);
+          window.crypto.getRandomValues(bytes);
+          bytes[6] = (bytes[6] & 0x0f) | 0x40;
+          bytes[8] = (bytes[8] & 0x3f) | 0x80;
+          return [...bytes].map((byte, index) => {
+            const separator = [4, 6, 8, 10].includes(index) ? "-" : "";
+            return separator + byte.toString(16).padStart(2, "0");
+          }).join("");
+        };
+
+        const createOwnershipToken = () => {
+          const bytes = new Uint8Array(32);
+          window.crypto.getRandomValues(bytes);
+          let binary = "";
+          bytes.forEach((byte) => { binary += String.fromCharCode(byte); });
+          return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+        };
+
+        const identityFragment = () => {
+          const json = JSON.stringify({ playerKey, ownershipToken });
+          const bytes = new TextEncoder().encode(json);
+          let binary = "";
+          bytes.forEach((byte) => { binary += String.fromCharCode(byte); });
+          return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+        };
+
+        const updateDashboardLink = () => {
+          const dashboardUrl = String(paymentConfig.dashboard_url || "").trim();
+          if (!dashboardUrl) return;
+          try {
+            const url = new URL(dashboardUrl);
+            if (!["http:", "https:"].includes(url.protocol)) return;
+            url.hash = `arcade-identity=${identityFragment()}`;
+            dashboardLink.href = url.toString();
+            dashboardLink.hidden = false;
+          } catch (error) {
+            dashboardLink.hidden = true;
+          }
+        };
+
+        const loadPlayerKey = () => {
+          const storageKey = "tlama-arcade-player-key";
+          try {
+            const saved = window.localStorage.getItem(storageKey);
+            if (saved) return saved;
+            const created = createPlayerKey();
+            window.localStorage.setItem(storageKey, created);
+            return created;
+          } catch (error) {
+            return createPlayerKey();
+          }
+        };
+
+        let playerKey = loadPlayerKey();
+        const loadOwnershipToken = () => {
+          const storageKey = "tlama-arcade-ownership-token";
+          try {
+            const saved = window.localStorage.getItem(storageKey);
+            if (saved) return saved;
+            const created = createOwnershipToken();
+            window.localStorage.setItem(storageKey, created);
+            return created;
+          } catch (error) {
+            return createOwnershipToken();
+          }
+        };
+        let ownershipToken = loadOwnershipToken();
+        try {
+          playerName.value = window.localStorage.getItem("tlama-arcade-nickname") || "";
+        } catch (error) {
+          playerName.value = "";
+        }
+        let identityUpgradeAttempted = false;
+
+        const rotatePlayerIdentity = () => {
+          playerKey = createPlayerKey();
+          ownershipToken = createOwnershipToken();
+          try {
+            window.localStorage.setItem("tlama-arcade-player-key", playerKey);
+            window.localStorage.setItem("tlama-arcade-ownership-token", ownershipToken);
+          } catch (error) {
+            // The fresh in-memory identity still permits this browser session to continue.
+          }
+        };
+
+        const send = (message) => {
+          if (socket && socket.readyState === WebSocket.OPEN) socket.send(JSON.stringify(message));
+        };
+
+        const adminCookie = (name) => {
+          const prefix = `${name}=`;
+          return document.cookie.split(";").map((item) => item.trim())
+            .find((item) => item.startsWith(prefix))?.slice(prefix.length) || "";
+        };
+
+        const loadAdminStatus = async () => {
+          try {
+            const response = await fetch("./admin/status", {
+              credentials: "same-origin",
+              cache: "no-store",
+            });
+            const status = await response.json();
+            if (response.ok && status.enabled === true) {
+              adminPortalButton.disabled = false;
+              adminPortalButton.textContent = "Admin testing";
+              adminPortalStatus.textContent = "Operator access is available.";
+            } else {
+              adminPortalButton.disabled = true;
+              adminPortalButton.textContent = "Admin testing unavailable";
+              adminPortalStatus.textContent = "Admin testing is unavailable.";
+            }
+          } catch (error) {
+            adminPortalButton.disabled = true;
+            adminPortalButton.textContent = "Admin testing unavailable";
+            adminPortalStatus.textContent = "Admin testing is unavailable.";
+          }
+        };
+
+        adminPortalButton.addEventListener("click", () => {
+          if (adminPortalButton.disabled) return;
+          adminPortalStatus.textContent = "Enter the operator password.";
+          adminPassword.value = "";
+          adminPortalDialog.showModal();
+          adminPassword.focus();
+        });
+        adminPortalForm.addEventListener("submit", async (event) => {
+          event.preventDefault();
+          const password = adminPassword.value;
+          // Clear the input before making the request and never persist it.
+          adminPassword.value = "";
+          const csrf = adminCookie("tlama_arcade_admin_csrf");
+          adminPortalStatus.textContent = "Authenticating…";
+          try {
+            const response = await fetch("./admin/auth", {
+              method: "POST",
+              credentials: "same-origin",
+              cache: "no-store",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({ password, csrf }),
+            });
+            if (!response.ok) throw new Error("Authentication failed.");
+            adminTestSession = true;
+            const level = Number(adminLevel.value);
+            const testSkinId = {
+              "aurora-skin": "aurora",
+              "midnight-skin": "midnight",
+            }[adminCosmetic.value] || "";
+            pendingAdminLevel = level;
+            pendingAdminSkinId = testSkinId;
+            adminPortalStatus.textContent = "Authorized. Applying the level reset…";
+            adminPortalDialog.close();
+            if (socket && socket.readyState === WebSocket.OPEN && localPlayerId) {
+              send({ type: "admin_configure_test", level, test_skin_id: testSkinId });
+              pendingAdminLevel = null;
+              pendingAdminSkinId = "";
+            } else {
+              pendingJoin = true;
+              connect();
+            }
+          } catch (error) {
+            adminPortalStatus.textContent = "Authentication failed.";
+          }
+        });
+
+        const setPaymentNotice = (message, state = "") => {
+          paymentNotice.textContent = message;
+          paymentNotice.className = `payment-notice ${state}`.trim();
+        };
+
+        const economyConfig = (config) => config?.game_economy || {};
+        const configIsComplete = (config) => {
+          const economy = economyConfig(config);
+          return Boolean(
+            config &&
+            config.enabled &&
+            config.mint_address &&
+            config.rpc_url &&
+            Number.isInteger(Number(config.decimals)) &&
+            economy.settlement_mode === "audited-transfer-hook-required" &&
+            economy.reward_vault_percent === 100 &&
+            economy.reward_vault_address &&
+            economy.hook_program_address
+          );
+        };
+
+        const renderShop = () => {
+          shopElement.replaceChildren();
+          const catalog = economyConfig(paymentConfig).catalog || paymentConfig.catalog || [];
+          catalog.filter((item) => item.kind !== "utility").forEach((item) => {
+            const row = document.createElement("div");
+            row.className = "shop-item";
+            const copy = document.createElement("div");
+            const label = document.createElement("strong");
+            const price = document.createElement("small");
+            const kind = document.createElement("em");
+            const button = document.createElement("button");
+            label.textContent = item.label;
+            price.textContent = `${item.amount_tlama} TLAMA`;
+            kind.textContent = item.kind === "entry" ? "Match access" : "Cosmetic";
+            button.type = "button";
+            button.textContent = item.kind === "entry" ? "Get ticket" : "Preview only";
+            button.disabled = item.kind === "cosmetic" || !configIsComplete(paymentConfig);
+            button.addEventListener("click", () => purchaseItem(item, button));
+            copy.append(label, price, kind);
+            row.append(copy, button);
+            shopElement.appendChild(row);
+          });
+          if (!catalog.length) {
+            shopElement.textContent = "No products configured.";
+          }
+          if (configIsComplete(paymentConfig)) {
+            setPaymentNotice(
+              `100% of purchases route to ${economyConfig(paymentConfig).reward_vault_label || "the Game Rewards Vault"}.`,
+              "ready"
+            );
+          }
+        };
+
+        const setCabinetStatus = (message, state = "") => {
+          cabinetStatus.textContent = message;
+          cabinetStatus.className = `cabinet-status-bar ${state}`.trim();
+        };
+
+        const safeSkinCatalog = (catalog) =>
+          (Array.isArray(catalog) ? catalog : [])
+            .filter((item) =>
+              item &&
+              typeof item.skin_id === "string" &&
+              Object.hasOwn(SPRITE_STATE_TABLE, item.skin_id) &&
+              item.skin_id !== "default" &&
+              typeof item.label === "string" &&
+              Number.isFinite(Number(item.amount_tlama))
+            )
+            .map((item) => ({
+              id: String(item.id),
+              skin_id: item.skin_id,
+              label: item.label,
+              amount_tlama: Number(item.amount_tlama),
+              description: String(item.description || "Cosmetic only. No gameplay advantage."),
+            }));
+
+        const currentCabinetPlayer = () =>
+          localPlayerId ? players.get(localPlayerId) || null : null;
+
+        const checkSkinAffordability = async (item) => {
+          if (!window.TLAMA_WEB3?.checkTokenAffordability) {
+            return { available: false, affordable: false, priceTlama: item.amount_tlama };
+          }
+          return window.TLAMA_WEB3.checkTokenAffordability(item.amount_tlama);
+        };
+
+        const requestSkinPurchase = async (item, button) => {
+          button.disabled = true;
+          setCabinetStatus("Checking the connected wallet’s TLAMA balance…");
+          try {
+            const result = await checkSkinAffordability(item);
+            if (!result.available) {
+              setCabinetStatus(
+                "Wallet verification is ready, but public Solana settings are not enabled.",
+                "error",
+              );
+              return;
+            }
+            if (!result.affordable) {
+              setCabinetStatus(
+                `Insufficient TLAMA. This skin costs ${item.amount_tlama} TLAMA.`,
+                "error",
+              );
+              return;
+            }
+            setCabinetStatus(
+              "Balance verified. Cosmetic settlement remains preview-only until server-side transaction verification is audited and enabled.",
+              "ready",
+            );
+          } catch (error) {
+            setCabinetStatus(error?.message || "Wallet verification failed.", "error");
+          } finally {
+            button.disabled = false;
+          }
+        };
+
+        const requestExtraLifePurchase = async (item, button) => {
+          if (!localPlayerId) {
+            setCabinetStatus("Join the room before buying an upgrade.", "error");
+            return;
+          }
+          button.disabled = true;
+          setCabinetStatus("Preparing the Heart Matrix settlement…");
+          const result = await purchaseItem(item, button);
+          const wallet = connectedWallet || window.TLAMA_WEB3?.getWallet?.();
+          if (!result?.signature || !wallet?.publicKey) {
+            renderSkinCabinet(true);
+            return;
+          }
+          setCabinetStatus("Payment confirmed. Waiting for server verification…");
+          send({
+            type: "purchase_extra_life",
+            item_id: item.id,
+            signature: result.signature,
+            wallet_address: wallet.publicKey.toString(),
+            oracle_quote: result.oracle_quote,
+          });
+        };
+
+        const renderSkinCabinet = (force = false) => {
+          const player = currentCabinetPlayer();
+          const owned = new Set(
+            Array.isArray(player?.owned_skin_ids) ? player.owned_skin_ids : ["default"],
+          );
+          const equipped = Object.hasOwn(
+            SPRITE_STATE_TABLE,
+            String(player?.equipped_skin_id || "default"),
+          )
+            ? String(player?.equipped_skin_id || "default")
+            : "default";
+          const signature = JSON.stringify({
+            player: player?.player_id || "",
+            owned: [...owned].sort(),
+            equipped,
+            catalog: skinCatalog.map((item) => item.id),
+            extraLifeUnlocked: Boolean(player?.extra_life_unlocked),
+            extraLivesPurchased: Number(player?.extra_lives_purchased || 0),
+            adminTestSession,
+          });
+          if (!force && signature === cabinetStateSignature) return;
+          cabinetStateSignature = signature;
+          cabinetList.replaceChildren();
+
+          const utilityItem = (
+            economyConfig(paymentConfig).catalog || paymentConfig.catalog || []
+          ).find((item) => item?.id === "heart-matrix-upgrade");
+          if (
+            player?.extra_life_unlocked &&
+            utilityItem &&
+            typeof utilityItem.amount_atomic === "string" &&
+            /^\d+$/.test(utilityItem.amount_atomic) &&
+            BigInt(utilityItem.amount_atomic) > 0n
+          ) {
+            const fragment = cabinetItemTemplate.content.cloneNode(true);
+            const row = fragment.querySelector(".cabinet-item");
+            const action = fragment.querySelector("[data-action-btn]");
+            const purchased = Math.max(0, Number(player.extra_lives_purchased || 0));
+            row.classList.add("utility");
+            row.dataset.skinId = "";
+            fragment.querySelector("[data-label]").textContent = "Heart Matrix Upgrade";
+            fragment.querySelector("[data-description]").textContent =
+              "Adds one server-authoritative life to this match. Maximum two.";
+            fragment.querySelector("[data-price]").textContent = `${utilityItem.amount_tlama} TLAMA`;
+            action.textContent = purchased >= 2
+              ? "MAX"
+              : configIsComplete(paymentConfig) ? `Buy ${purchased}/2` : "Settlement locked";
+            action.disabled = purchased >= 2 || !configIsComplete(paymentConfig);
+            if (!action.disabled) {
+              action.addEventListener("click", () =>
+                requestExtraLifePurchase(utilityItem, action)
+              );
+            }
+            cabinetList.appendChild(fragment);
+          }
+
+          const items = [
+            {
+              id: "default",
+              skin_id: "default",
+              label: "Classic TrustLlama",
+              amount_tlama: 0,
+              description: "The original Arcade look.",
+            },
+            ...skinCatalog,
+          ];
+          for (const item of items) {
+            const fragment = cabinetItemTemplate.content.cloneNode(true);
+            const row = fragment.querySelector(".cabinet-item");
+            const palette = SPRITE_STATE_TABLE[item.skin_id];
+            const swatch = fragment.querySelector("[data-preview-class]");
+            const action = fragment.querySelector("[data-action-btn]");
+            row.dataset.skinId = item.skin_id;
+            fragment.querySelector("[data-label]").textContent = item.label;
+            fragment.querySelector("[data-description]").textContent = item.description;
+            fragment.querySelector("[data-price]").textContent =
+              item.amount_tlama > 0 ? `${item.amount_tlama} TLAMA` : "Included";
+            swatch.style.setProperty("--skin-body", palette.body);
+            swatch.style.setProperty("--skin-accent", palette.accent);
+            swatch.style.setProperty("--skin-glow", palette.glow);
+
+            if (equipped === item.skin_id) {
+              row.classList.add("equipped");
+              action.textContent = "Equipped";
+              action.disabled = true;
+            } else if (owned.has(item.skin_id)) {
+              action.textContent = "Equip";
+              action.addEventListener("click", () => {
+                if (!localPlayerId) {
+                  setCabinetStatus("Join the room before equipping a skin.", "error");
+                  return;
+                }
+                action.disabled = true;
+                setCabinetStatus(`Equipping ${item.label}…`);
+                send({ type: "equip_skin", skin_id: item.skin_id });
+              });
+            } else {
+              action.textContent = configIsComplete(paymentConfig)
+                ? "Check balance"
+                : "Settlement locked";
+              action.disabled = !configIsComplete(paymentConfig);
+              action.addEventListener("click", () => requestSkinPurchase(item, action));
+            }
+            cabinetList.appendChild(fragment);
+          }
+
+          if (!player) {
+            setCabinetStatus("Join the room to view ownership and equip a skin.");
+          } else if (adminTestSession) {
+            setCabinetStatus(
+              "Admin cosmetic testing is active. Test grants are session-only.",
+              "ready",
+            );
+          } else if (!configIsComplete(paymentConfig)) {
+            setCabinetStatus(
+              "Preview and equip owned skins. Live TLAMA settlement is disabled.",
+            );
+          } else {
+            setCabinetStatus("Wallet verification is available.", "ready");
+          }
+        };
+
+        shopOverlayButton.addEventListener("click", () => {
+          renderSkinCabinet(true);
+          if (!shopOverlayDialog.open) shopOverlayDialog.show();
+        });
+        shopOverlayDialog.addEventListener("close", () => {
+          cabinetStateSignature = "";
+        });
+        if (window.location.hash === "#prize-cabinet") {
+          window.requestAnimationFrame(() => {
+            renderSkinCabinet(true);
+            if (!shopOverlayDialog.open) shopOverlayDialog.show();
+          });
+        }
+
+        const loadPaymentConfig = async () => {
+          try {
+            const response = await fetch("./payment-config", { cache: "no-store" });
+            if (response.ok) paymentConfig = await response.json();
+          } catch (error) {
+            // Standalone files use the disabled-by-default public config.js.
+          }
+          renderShop();
+          if (!skinCatalog.length) {
+            skinCatalog = safeSkinCatalog(
+              (economyConfig(paymentConfig).catalog || paymentConfig.catalog || [])
+                .filter((item) => item.kind === "cosmetic")
+            );
+          }
+          renderSkinCabinet(true);
+        };
+
+        let adminTestSession = false;
+        const trackEvent = (name, data) => {
+          if (adminTestSession) return;
+          try {
+            const tracking = window.umami?.track(name, data);
+            Promise.resolve(tracking).catch(() => {
+              // Providers may report an outage after gameplay has continued.
+            });
+          } catch {
+            // Analytics must never interrupt gameplay, wallet, or purchase behavior.
+          }
+        };
+
+        // Bump only when Level 10 difficulty or controls materially change.
+        const CITADEL_ENCOUNTER_VERSION = "citadel_v1";
+        const citadelMilestones = new Set();
+        let citadelControlType = "unknown";
+        const safeBossPhase = (phase) => [1, 2, 3].includes(Number(phase)) ? Number(phase) : 1;
+        const trackCitadelMilestone = (name, phase) => {
+          if (adminTestSession) return;
+          if (citadelMilestones.has(name)) return;
+          citadelMilestones.add(name);
+          trackEvent(name, {
+            encounter_version: CITADEL_ENCOUNTER_VERSION,
+            control_type: citadelControlType,
+            boss_phase: safeBossPhase(phase),
+          });
+        };
+
+        // Bump only when Level 1 layout, hazards, goals, or pacing materially changes.
+        const OPENING_VERSION = "andean_v3";
+        const openingMilestones = new Set();
+        const trackOpeningMilestone = (name) => {
+          if (adminTestSession) return;
+          if (openingMilestones.has(name)) return;
+          openingMilestones.add(name);
+          trackEvent(name, { opening_version: OPENING_VERSION });
+        };
+
+        const safeWalletAdapter = (adapter) =>
+          ["phantom", "solflare", "coinbase"].includes(adapter) ? adapter : "unknown";
+
+        const safeItemKind = (item) =>
+          ["entry", "cosmetic", "utility"].includes(item && item.kind) ? item.kind : "other";
+
+        const pendingPurchases = new Set();
+        const purchaseKey = (item) => String(item && item.id ? item.id : safeItemKind(item));
+
+        const connectWallet = async (adapter = "phantom") => {
+          pendingWalletAdapter = safeWalletAdapter(adapter);
+          if (!window.TLAMA_WEB3 || typeof window.TLAMA_WEB3.connect !== "function") {
+            trackEvent("wallet_connection_failed", {
+              adapter: pendingWalletAdapter,
+              stage: "unavailable_setup",
+            });
+            throw new Error("The wallet adapter portal is still loading.");
+          }
+          connectedWallet = await window.TLAMA_WEB3.connect(adapter);
+          const { publicKey } = connectedWallet;
+          const address = publicKey.toString();
+          walletStatus.textContent = `${address.slice(0, 4)}…${address.slice(-4)} · connected`;
+          walletButton.textContent = "Wallet connected";
+          return connectedWallet;
+        };
+
+        const reviewPurchase = (item, economy) => new Promise((resolve) => {
+          const itemKind = safeItemKind(item);
+          let settled = false;
+          purchaseDialogCopy.textContent =
+            `Purchase ${item.label} for ${item.amount_tlama} TLAMA? 100% routes to the ` +
+            `${economy.reward_vault_label || "Game Rewards Vault"} through the audited settlement hook.`;
+          const finish = (approved) => {
+            if (settled) return;
+            settled = true;
+            confirmPurchaseButton.disabled = true;
+            cancelPurchaseButton.disabled = true;
+            purchaseDialog.removeEventListener("close", cancel);
+            purchaseDialog.close();
+            trackEvent(approved ? "purchase_wallet_handoff" : "purchase_cancelled", {
+              item_kind: itemKind,
+            });
+            resolve(approved);
+          };
+          const cancel = () => {
+            if (settled) return;
+            settled = true;
+            confirmPurchaseButton.disabled = true;
+            cancelPurchaseButton.disabled = true;
+            trackEvent("purchase_cancelled", { item_kind: itemKind });
+            resolve(false);
+          };
+          confirmPurchaseButton.onclick = () => finish(true);
+          cancelPurchaseButton.onclick = () => finish(false);
+          confirmPurchaseButton.disabled = false;
+          cancelPurchaseButton.disabled = false;
+          purchaseDialog.addEventListener("close", cancel, { once: true });
+          purchaseDialog.showModal();
+          trackEvent("purchase_review_opened", { item_kind: itemKind });
+        });
+
+        const purchaseItem = async (item, shopButton) => {
+          if (!configIsComplete(paymentConfig)) {
+            setPaymentNotice("Live purchases are disabled until the audited vault settlement hook and public addresses are verified.", "error");
+            return;
+          }
+          const key = purchaseKey(item);
+          if (item.kind === "entry" && entryTicketPurchased) return;
+          if (pendingPurchases.has(key)) return;
+          pendingPurchases.add(key);
+          if (shopButton) shopButton.disabled = true;
+
+          try {
+            let economy = economyConfig(paymentConfig);
+            const approved = await reviewPurchase(item, economy);
+            if (!approved) return;
+            if (item.id === "heart-matrix-upgrade") {
+              const response = await fetch("./payment-config", { cache: "no-store" });
+              if (!response.ok) throw new Error("A fresh Heart Matrix price is unavailable.");
+              paymentConfig = await response.json();
+              economy = economyConfig(paymentConfig);
+              const refreshedItem = (economy.catalog || paymentConfig.catalog || [])
+                .find((candidate) => candidate?.id === item.id);
+              if (!paymentConfig.enabled || !refreshedItem?.oracle_quote) {
+                throw new Error("A fresh Heart Matrix price is unavailable.");
+              }
+              if (refreshedItem.amount_atomic !== item.amount_atomic) {
+                const refreshedApproved = await reviewPurchase(refreshedItem, economy);
+                if (!refreshedApproved) return;
+              }
+              item = refreshedItem;
+            }
+            connectedWallet =
+              connectedWallet ||
+              (window.TLAMA_WEB3 && window.TLAMA_WEB3.getWallet()) ||
+              await connectWallet();
+            setPaymentNotice("Preparing the audited vault settlement hook for wallet approval…");
+            if (!window.TLAMA_WEB3 || typeof window.TLAMA_WEB3.purchaseGameItem !== "function") {
+              throw new Error("The audited game settlement hook is not installed.");
+            }
+            const result = await window.TLAMA_WEB3.purchaseGameItem(item, paymentConfig);
+            if (!result || !result.signature) {
+              throw new Error("The settlement hook returned no confirmed signature.");
+            }
+            if (item.kind === "entry") entryTicketPurchased = true;
+            setPaymentNotice(
+              `${item.label} purchased. 100% routed to the Game Rewards Vault. Signature ${result.signature.slice(0, 8)}…${result.signature.slice(-8)}.`,
+              "ready"
+            );
+            trackEvent("purchase_confirmed", { item_kind: safeItemKind(item) });
+            return result;
+          } catch (error) {
+            const message = error && error.message ? error.message : "Transaction was not completed.";
+            setPaymentNotice(message, "error");
+            trackEvent("purchase_failed", { item_kind: safeItemKind(item) });
+            return null;
+          } finally {
+            pendingPurchases.delete(key);
+            if (shopButton) {
+              shopButton.disabled =
+                !configIsComplete(paymentConfig) ||
+                (item.kind === "entry" && entryTicketPurchased);
+            }
+          }
+        };
+
+        const renderLeaderboard = (items) => {
+          leaderboardElement.replaceChildren();
+          if (!items || !items.length) {
+            const empty = document.createElement("li");
+            empty.className = "empty";
+            empty.textContent = "No scores yet.";
+            leaderboardElement.appendChild(empty);
+            return;
+          }
+          items.forEach((item, index) => {
+            const row = document.createElement("li");
+            const name = document.createElement("strong");
+            const score = document.createElement("span");
+            name.textContent = `${index + 1}. ${item.name}`;
+            score.textContent = `${item.score} pts`;
+            row.append(name, score);
+            leaderboardElement.appendChild(row);
+          });
+        };
+
+        const applyState = (state) => {
+          const nextSkinCatalog = safeSkinCatalog(state.skin_catalog);
+          if (nextSkinCatalog.length) skinCatalog = nextSkinCatalog;
+            if (Array.isArray(state.levels) && state.levels.length >= 10) levels = state.levels;
+          if (Number.isFinite(state.victory_score)) victoryScore = state.victory_score;
+          players.clear();
+          const snapshotPlayerIds = new Set();
+          (state.players || []).forEach((player) => {
+            const playerId = player.player_id;
+            snapshotPlayerIds.add(playerId);
+            const snapshotX = Number(player.x);
+            const previousX = authoritativePlayerX.get(playerId);
+            if (!authoritativeFacing.has(playerId)) authoritativeFacing.set(playerId, 1);
+            if (
+              Number.isFinite(previousX) &&
+              Number.isFinite(snapshotX) &&
+              Math.abs(snapshotX - previousX) > AUTHORITATIVE_FACING_DEADBAND
+            ) {
+              authoritativeFacing.set(playerId, snapshotX < previousX ? -1 : 1);
+            }
+            if (Number.isFinite(snapshotX)) authoritativePlayerX.set(playerId, snapshotX);
+            players.set(playerId, player);
+          });
+          for (const playerId of authoritativePlayerX.keys()) {
+            if (!snapshotPlayerIds.has(playerId)) authoritativePlayerX.delete(playerId);
+          }
+          for (const playerId of authoritativeFacing.keys()) {
+            if (!snapshotPlayerIds.has(playerId)) authoritativeFacing.delete(playerId);
+          }
+          collectibles = state.collectibles || {};
+          if (state.pumas) hazards.pumas = state.pumas;
+          if (state.logs) hazards.logs = state.logs;
+          if (state.tractors) hazards.tractors = state.tractors;
+          if (state.maze_hazards) hazards.maze = state.maze_hazards;
+          ghosts = Array.isArray(state.ghosts) ? state.ghosts : [];
+           level7World = (state.level7_worlds && localPlayerId && state.level7_worlds[localPlayerId]) || level7World;
+           level8World = (state.level8_worlds && localPlayerId && state.level8_worlds[localPlayerId]) || level8World;
+          level9World = (state.level9_worlds && localPlayerId && state.level9_worlds[localPlayerId]) || level9World;
+           level10World = (state.level10_worlds && localPlayerId && state.level10_worlds[localPlayerId]) || level10World;
+          const local = localPlayerId && players.get(localPlayerId);
+          if (local) {
+            const previousLevel = currentLevel.number;
+            const nextLevel = levels.find((level) => level.number === local.current_level) || levels[0];
+            const enteringCitadel = previousLevel !== 10 && nextLevel.number === 10;
+            if (nextLevel.number === 10) {
+              authoritativeCitadelPosition = { x: local.x, y: local.y };
+              if (enteringCitadel) localPosition = { ...authoritativeCitadelPosition };
+            } else {
+              localPosition = { x: local.x, y: local.y };
+            }
+            scoreElement.textContent = local.score;
+            livesElement.textContent = local.lives;
+            orbsElement.textContent = local.orbs_collected;
+             document.getElementById("superCharge").textContent = `${local.super_spit_charge ?? 0}%`;
+            const oxygenElement = document.getElementById("oxygen");
+            if (oxygenElement) oxygenElement.textContent = `${Math.round(local.oxygen ?? 100)}%`;
+            localGameOver = Boolean(local.game_over);
+            localVictory = Boolean(local.victory_announced);
+            gameOverBanner.classList.toggle("visible", localGameOver);
+            resetButton.hidden = !localGameOver && !localVictory;
+            currentLevel = nextLevel;
+             setCitadelSuperReady(
+               currentLevel.number === 10 &&
+               !localGameOver &&
+               !localVictory &&
+               citadelChargeHeld &&
+               Number(local.super_spit_charge ?? 0) >= 100,
+             );
+            if (previousLevel !== 10 && currentLevel.number === 10) {
+              trackCitadelMilestone("citadel_level_entered", level10World.boss?.phase);
+            }
+            if (
+              citadelChargeHeld &&
+              (currentLevel.number !== 10 || localGameOver || localVictory)
+            ) {
+              clearCitadelCharge({ fire: false, sendInput: false });
+            }
+            renderActionButton();
+            renderSkinCabinet();
+            if (previousLevel !== currentLevel.number && currentLevel.number > 1) {
+               if (soundEnabled) { playSound("entry"); scheduleAmbience(); }
+               const transitionBanner = currentLevel.number >= 5 ? labyrinthBanner : currentLevel.number === 4 ? castleBanner : hyperdriveBanner;
+               if (currentLevel.number !== 4 && currentLevel.number < 5) {
+                 transitionBanner.textContent = currentLevel.name.toUpperCase();
+              }
+              canvasWrap.classList.remove("hyperdrive-transition");
+              transitionBanner.classList.remove("visible");
+              void canvasWrap.offsetWidth;
+              canvasWrap.classList.add("hyperdrive-transition");
+              transitionBanner.classList.add("visible");
+              window.setTimeout(() => {
+                canvasWrap.classList.remove("hyperdrive-transition");
+                transitionBanner.classList.remove("visible");
+              }, 500);
+            }
+            if (local.stunned && Number.isFinite(local.stun_remaining_ms)) {
+              localStunnedUntil = Math.max(localStunnedUntil, performance.now() + local.stun_remaining_ms);
+            }
+            currentLevelElement.textContent = currentLevel.number;
+            levelNameElement.textContent = currentLevel.name;
+             const target = currentLevel.number >= 10 ? victoryScore : currentLevel.number >= 9 ? (currentLevel.next_score || victoryScore) : currentLevel.next_score;
+            const start = currentLevel.min_score;
+            const progress = Math.max(0, Math.min(1, (local.score - start) / Math.max(1, target - start)));
+            progressFill.style.width = `${Math.round(progress * 100)}%`;
+            progressPercent.textContent = `${Math.round(progress * 100)}%`;
+             progressLabel.textContent = currentLevel.number === 10
+               ? `Warden HP ${level10World.boss?.hp ?? 300}/300 · Phase ${level10World.boss?.phase ?? 1} · Target ${victoryScore}`
+               : local.score >= victoryScore ? "Victory achieved"
+                : `${currentLevel.number >= 9 ? "Victory" : "Next level"}: ${target} points`;
+          }
+          playerCountElement.textContent = players.size;
+          entryFeeElement.textContent = `${state.simulated_entry_fee_tlama || 25} TLAMA / match`;
+          renderLeaderboard(state.leaderboard);
+        };
+
+        const connect = () => {
+          if (
+            socket &&
+            (socket.readyState === WebSocket.OPEN ||
+              socket.readyState === WebSocket.CONNECTING)
+          ) {
+            return;
+          }
+          setConnection(false, "Connecting to game server");
+          try {
+            socket = new WebSocket(wsUrl());
+          } catch (error) {
+            setConnection(false, "Offline preview");
+            return;
+          }
+          socket.addEventListener("open", () => {
+            setConnection(true, "Game server connected");
+            if (pendingJoin) {
+              pendingJoin = false;
+              joinRoom();
+            }
+          });
+          socket.addEventListener("message", (event) => {
+            const message = JSON.parse(event.data);
+            if (message.type === "welcome") {
+              localPlayerId = message.player_id;
+              trackOpeningMilestone("arcade_joined");
+              identityUpgradeAttempted = false;
+              entryFeeElement.textContent = `${message.simulated_entry_fee_tlama} TLAMA / match`;
+              updateDashboardLink();
+              if (pendingAdminLevel !== null) {
+                const selectedLevel = pendingAdminLevel;
+                const selectedSkinId = pendingAdminSkinId;
+                pendingAdminLevel = null;
+                pendingAdminSkinId = "";
+                send({
+                  type: "admin_configure_test",
+                  level: selectedLevel,
+                  test_skin_id: selectedSkinId,
+                });
+              }
+            }
+            if (message.type === "event" && message.event === "victory" && message.player_id === localPlayerId) {
+              victoryBanner.classList.add("visible");
+              window.setTimeout(() => victoryBanner.classList.remove("visible"), 3500);
+            }
+            if (message.type === "event" && message.event === "admin_level_selected") {
+              adminTestSession = true;
+            }
+            if (
+              message.type === "event" &&
+              message.event === "skin_equipped" &&
+              message.player_id === localPlayerId
+            ) {
+              setCabinetStatus("Skin equipped. The server confirmed the active sprite state.", "ready");
+            }
+            if (message.type === "event" && message.event === "game_reset" && message.player_id === localPlayerId) {
+              adminTestSession = false;
+              citadelMilestones.clear();
+              openingMilestones.clear();
+              citadelControlType = "unknown";
+              keys.clear();
+              releaseJoystick();
+               clearCitadelCharge({ fire: false, sendInput: false });
+              localStunnedUntil = 0;
+              gameOverBanner.classList.remove("visible");
+              victoryBanner.classList.remove("visible");
+            }
+            if (
+              message.type === "event" &&
+              ["hazard_stun", "life_lost", "game_over"].includes(message.event) &&
+              message.player_id === localPlayerId
+            ) {
+              if (message.hazard_kind === "puma") {
+                trackOpeningMilestone("chicken_collision");
+              }
+              if (message.event === "life_lost" || message.event === "game_over") {
+                 playSound("life_loss");
+              } else {
+                 playSound("stun");
+              }
+              localStunnedUntil = performance.now() + (message.duration_ms || 1000);
+              keys.clear();
+              releaseJoystick();
+              empFlash.classList.remove("visible");
+              void empFlash.offsetWidth;
+              empFlash.classList.add("visible");
+              window.setTimeout(() => empFlash.classList.remove("visible"), 300);
+            }
+            if (message.type === "event" && message.event === "ghost_stun" && message.player_id === localPlayerId) {
+              playSound("ghost");
+              localStunnedUntil = performance.now() + (message.duration_ms || 1250);
+              keys.clear();
+              releaseJoystick();
+            }
+            if (message.type === "event" && message.event === "block_broken") playSound("block_broken");
+            if (message.type === "event" && message.event === "block_impact") playSound("block_impact");
+            if (message.type === "event" && message.event === "question_block_hit") playSound("block_impact");
+            if (message.type === "event" && message.event === "phase_klaxon") playSound("klaxon");
+            if (message.type === "event" && message.event === "super_spit") {
+              playSound("super_spit");
+              if (message.player_id === localPlayerId) {
+                trackCitadelMilestone("citadel_super_spit_released", message.phase);
+              }
+            }
+            if (message.type === "event" && message.event === "boss_hit" && message.player_id === localPlayerId) {
+              trackCitadelMilestone("citadel_boss_hit", message.phase);
+            }
+            if (message.type === "event" && message.event === "victory" && message.event_metadata?.citadel_complete) {
+              playSound("grand_fanfare");
+              if (message.player_id === localPlayerId) {
+                trackCitadelMilestone("citadel_completed", message.event_metadata.boss_phase);
+              }
+            }
+            if (message.type === "event" && message.event === "victory" && message.event_metadata?.level_clear) playSound("level_clear");
+            if (
+              message.type === "event" &&
+              ["orb_collected", "level_up", "victory"].includes(message.event)
+            ) {
+              if (message.player_id === localPlayerId) {
+                if (message.event === "orb_collected") {
+                  trackOpeningMilestone("first_orb_collected");
+                }
+                if (message.event === "level_up" && message.current_level === 2) {
+                  trackOpeningMilestone("level_2_reached");
+                }
+                if (message.extra_life_awarded) {
+                  playSound("level");
+                }
+              }
+              const point = collectionPoint(message);
+              if (point) spawnCollectionEffects(point.x, point.y);
+              playSound(message.event === "level_up" ? "level" : message.event === "victory" ? "victory" : "orb");
+            }
+            if (
+              message.type === "error" &&
+              message.message === "Player identity could not be verified." &&
+              !identityUpgradeAttempted
+            ) {
+              identityUpgradeAttempted = true;
+              rotatePlayerIdentity();
+              joinRoom();
+              return;
+            }
+            if (message.type === "event" && message.event === "extra_life_purchased") {
+              setCabinetStatus("Heart Matrix upgraded. Your life counter is updated.", "ready");
+              playSound("level");
+            }
+            if (message.players || message.collectibles) applyState(message);
+          });
+          socket.addEventListener("close", () => {
+             clearCitadelCharge({ fire: false, sendInput: false });
+            setConnection(false, "Game server offline");
+            socket = null;
+          });
+          socket.addEventListener("error", () => setConnection(false, "Game server unavailable"));
+        };
+
+        const joinRoom = async () => {
+          const nickname = playerName.value.trim().replace(/\s+/g, " ");
+          if (nickname.length < 2) {
+            playerName.setCustomValidity("Enter a nickname with at least 2 characters.");
+            playerName.reportValidity();
+            playerName.focus();
+            return;
+          }
+          playerName.setCustomValidity("");
+          playerName.value = nickname.slice(0, 18);
+          try {
+            window.localStorage.setItem("tlama-arcade-nickname", playerName.value);
+          } catch (error) {
+            // The nickname still applies to this session when storage is unavailable.
+          }
+          const economy = economyConfig(paymentConfig);
+          if (economy.entry_fee_required && paymentConfig.enabled && !entryTicketPurchased) {
+            pendingJoin = true;
+            const ticket = (economy.catalog || paymentConfig.catalog || []).find(
+              (item) => item.kind === "entry"
+            );
+            if (!ticket) {
+              setPaymentNotice("No mandatory entry ticket is configured.", "error");
+              pendingJoin = false;
+              return;
+            }
+            await purchaseItem(ticket);
+            if (!entryTicketPurchased) {
+              pendingJoin = false;
+              return;
+            }
+          }
+          if (socket && socket.readyState === WebSocket.OPEN) {
+            send({
+              type: "join",
+              player_key: playerKey,
+              ownership_token: ownershipToken,
+              name: playerName.value
+            });
+          } else {
+            pendingJoin = true;
+            connect();
+          }
+        };
+
+        document.getElementById("joinForm").addEventListener("submit", (event) => {
+          event.preventDefault();
+          joinRoom();
+        });
+        resetButton.addEventListener("click", () => {
+          resetButton.disabled = true;
+          send({ type: "reset" });
+          window.setTimeout(() => { resetButton.disabled = false; }, 800);
+        });
+
+        window.addEventListener("keydown", (event) => {
+          if (
+            ["Space", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "KeyW", "KeyA", "KeyS", "KeyD"].includes(event.code)
+          ) {
+            citadelControlType = "keyboard";
+          }
+          if (event.code === "Space") {
+            event.preventDefault();
+            if (currentLevel.number === 10) {
+              send({ type: "citadel_input", booster_x: 0, booster_y: 0, charge_pressed: true, fire_released: false, sequence: ++vehicleInputSequence });
+            } else if (currentLevel.number === 9) {
+              send({ type: "platformer_input", run_axis: 0, jump_pressed: true, sequence: ++platformerInputSequence });
+            } else {
+              send({ type: "vehicle_input", thrust: false, fire: true, sequence: ++vehicleInputSequence });
+            }
+            return;
+          }
+          if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "KeyW", "KeyA", "KeyS", "KeyD"].includes(event.code)) {
+            event.preventDefault();
+            keys.add(event.code);
+          }
+        });
+        window.addEventListener("keyup", (event) => {
+          keys.delete(event.code);
+          if (currentLevel.number === 7 && (event.code === "ArrowUp" || event.code === "KeyW")) {
+            send({ type: "vehicle_input", thrust: false, fire: false, sequence: ++vehicleInputSequence });
+          }
+          if (currentLevel.number === 8 && (event.code === "ArrowDown" || event.code === "KeyS")) {
+            send({ type: "submarine_input", thrust: false, sequence: ++vehicleInputSequence });
+          }
+          if (currentLevel.number === 9 && ["ArrowLeft", "ArrowRight", "KeyA", "KeyD"].includes(event.code)) {
+            const axis = (keys.has("ArrowRight") || keys.has("KeyD") ? 1 : 0) -
+              (keys.has("ArrowLeft") || keys.has("KeyA") ? 1 : 0);
+            send({ type: "platformer_input", run_axis: axis, jump_pressed: false, sequence: ++platformerInputSequence });
+          }
+          if (currentLevel.number === 10 && event.code === "Space") {
+            send({ type: "citadel_input", booster_x: 0, booster_y: 0, charge_pressed: citadelChargeHeld, fire_released: !citadelChargeHeld, sequence: ++vehicleInputSequence });
+          }
+        });
+        spitButton.addEventListener("click", (event) => {
+          const levelNumber = Number(currentLevel.number);
+          if (levelNumber === 10) {
+            event.preventDefault();
+            return;
+          }
+          if (levelNumber === 7) {
+            send({ type: "vehicle_input", thrust: false, fire: true, sequence: ++vehicleInputSequence });
+          } else if (levelNumber === 9) {
+            send({ type: "platformer_input", run_axis: 0, jump_pressed: true, sequence: ++platformerInputSequence });
+          }
+        });
+        spitButton.addEventListener("pointerdown", (event) => {
+          if (currentLevel.number !== 10 || localGameOver || localVictory || activeCitadelPointerId !== null) return;
+          event.preventDefault();
+          citadelControlType = "touch";
+          activeCitadelPointerId = event.pointerId;
+          citadelChargeHeld = true;
+          try {
+            spitButton.setPointerCapture?.(event.pointerId);
+          } catch (error) {
+            // Charging remains safe when pointer capture is unavailable.
+          }
+          renderActionButton();
+          send({
+            type: "citadel_input",
+            booster_x: 0,
+            booster_y: 0,
+            charge_pressed: true,
+            fire_released: false,
+            sequence: ++vehicleInputSequence,
+          });
+        });
+        const finishCitadelPointer = (event, fire) => {
+          if (event.pointerId !== activeCitadelPointerId) return;
+          event.preventDefault();
+          clearCitadelCharge({ fire });
+        };
+        spitButton.addEventListener("pointerup", (event) => finishCitadelPointer(event, true));
+        spitButton.addEventListener("pointercancel", (event) => finishCitadelPointer(event, false));
+        spitButton.addEventListener("lostpointercapture", (event) => {
+          if (event.pointerId === activeCitadelPointerId) clearCitadelCharge({ fire: false });
+        });
+        const releaseControlsForPagePause = () => {
+          const levelNumber = Number(currentLevel.number);
+          keys.clear();
+          clearCitadelCharge({ fire: false, sendInput: false });
+          releaseJoystick({ sendInput: false });
+          if (localGameOver || localVictory) return;
+          if (levelNumber === 7) {
+            send({
+              type: "vehicle_input",
+              thrust: false,
+              fire: false,
+              sequence: ++vehicleInputSequence,
+            });
+          } else if (levelNumber === 8) {
+            send({
+              type: "submarine_input",
+              thrust: false,
+              sequence: ++vehicleInputSequence,
+            });
+          } else if (levelNumber === 9) {
+            send({
+              type: "platformer_input",
+              run_axis: 0,
+              jump_pressed: false,
+              sequence: ++platformerInputSequence,
+            });
+          } else if (levelNumber === 10) {
+            send({
+              type: "citadel_input",
+              booster_x: 0,
+              booster_y: 0,
+              charge_pressed: false,
+              fire_released: false,
+              sequence: ++vehicleInputSequence,
+            });
+          }
+        };
+        window.addEventListener("blur", releaseControlsForPagePause);
+        window.addEventListener("pagehide", releaseControlsForPagePause);
+        document.addEventListener("visibilitychange", () => {
+          if (document.hidden) {
+            releaseControlsForPagePause();
+          }
+        });
+
+        const normalizedElementPoint = (contact, element) => {
+          const rect = element.getBoundingClientRect();
+          if (!rect.width || !rect.height) return { x: 0, y: 0 };
+          // clientX/clientY and getBoundingClientRect() are both CSS pixels.
+          // Do not multiply by devicePixelRatio: that only sizes the canvas
+          // backing store and would offset input on Retina/iOS displays.
+          return {
+            x: ((contact.clientX - rect.left) / rect.width) * 2 - 1,
+            y: ((contact.clientY - rect.top) / rect.height) * 2 - 1,
+          };
+        };
+
+        const updateJoystick = (contact) => {
+          const rect = joystick.getBoundingClientRect();
+          const normalized = normalizedElementPoint(contact, joystick);
+          const radius = Math.min(rect.width, rect.height) * 0.34;
+          let dx = normalized.x * rect.width / 2;
+          let dy = normalized.y * rect.height / 2;
+          const distance = Math.hypot(dx, dy);
+          if (distance > radius) {
+            dx = (dx / distance) * radius;
+            dy = (dy / distance) * radius;
+          }
+          touchVector = { x: dx / radius, y: dy / radius };
+          joystickKnob.style.transform = `translate3d(${dx}px, ${dy}px, 0)`;
+          if (Number(currentLevel.number) === 9 && !localGameOver && !localVictory) {
+            send({
+              type: "platformer_input",
+              run_axis: Math.max(-1, Math.min(1, Math.round(touchVector.x))),
+              jump_pressed: false,
+              sequence: ++platformerInputSequence,
+            });
+            lastPositionSent = performance.now();
+          }
+        };
+
+        const releaseJoystick = ({ sendInput = true } = {}) => {
+          const wasActive = activeTouchId !== null || activeJoystickPointerId !== null ||
+            touchVector.x !== 0 || touchVector.y !== 0;
+          activeTouchId = null;
+          activeJoystickPointerId = null;
+          touchVector = { x: 0, y: 0 };
+          joystickKnob.style.transform = "translate3d(0, 0, 0)";
+          const levelNumber = Number(currentLevel.number);
+          if (sendInput && wasActive && levelNumber === 9 && !localGameOver && !localVictory) {
+            send({
+              type: "platformer_input",
+              run_axis: 0,
+              jump_pressed: false,
+              sequence: ++platformerInputSequence,
+            });
+            lastPositionSent = performance.now();
+          } else if (sendInput && wasActive && levelNumber === 10 && !localGameOver && !localVictory) {
+            send({
+              type: "citadel_input",
+              booster_x: 0,
+              booster_y: 0,
+              charge_pressed: keys.has("Space") || citadelChargeHeld,
+              fire_released: false,
+              sequence: ++vehicleInputSequence,
+            });
+            lastPositionSent = performance.now();
+          }
+        };
+
+        joystick.addEventListener("pointerdown", (event) => {
+          if (!event.isPrimary || activeJoystickPointerId !== null || activeTouchId !== null) return;
+          activeJoystickPointerId = event.pointerId;
+          citadelControlType = event.pointerType === "mouse" ? "keyboard" : "touch";
+          updateJoystick(event);
+          event.preventDefault();
+          try {
+            joystick.setPointerCapture?.(event.pointerId);
+          } catch (error) {
+            // Window-level pointer listeners still terminate the gesture.
+          }
+        });
+        joystick.addEventListener("pointermove", (event) => {
+          if (event.pointerId !== activeJoystickPointerId) return;
+          updateJoystick(event);
+          event.preventDefault();
+        });
+        const endJoystickPointer = (event) => {
+          if (event.pointerId !== activeJoystickPointerId) return;
+          event.preventDefault();
+          releaseJoystick();
+        };
+        joystick.addEventListener("pointerup", endJoystickPointer);
+        joystick.addEventListener("pointercancel", endJoystickPointer);
+        joystick.addEventListener("lostpointercapture", (event) => {
+          if (event.pointerId === activeJoystickPointerId) releaseJoystick();
+        });
+
+        joystick.addEventListener("touchstart", (event) => {
+          if (activeTouchId !== null || activeJoystickPointerId !== null) return;
+          citadelControlType = "touch";
+          const touch = event.changedTouches[0];
+          activeTouchId = touch.identifier;
+          updateJoystick(touch);
+          event.preventDefault();
+        }, { passive: false });
+        joystick.addEventListener("touchmove", (event) => {
+          const touch = Array.from(event.changedTouches).find((item) => item.identifier === activeTouchId);
+          if (!touch) return;
+          updateJoystick(touch);
+          event.preventDefault();
+        }, { passive: false });
+        const endTouch = (event) => {
+          if (Array.from(event.changedTouches).some((item) => item.identifier === activeTouchId)) {
+            releaseJoystick();
+            event.preventDefault();
+          }
+        };
+        joystick.addEventListener("touchend", endTouch, { passive: false });
+        joystick.addEventListener("touchcancel", endTouch, { passive: false });
+
+        walletButton.addEventListener("click", () => {
+          walletDialogStatus.textContent = "Select a wallet to continue.";
+          walletDialogStatus.classList.remove("error");
+          walletDialogActive = true;
+          walletDialogCompleted = false;
+          walletDialog.showModal();
+          trackEvent("wallet_dialog_opened");
+        });
+        walletDialog.addEventListener("close", () => {
+          if (walletDialogActive && !walletDialogCompleted) {
+            trackEvent("wallet_dialog_cancelled");
+          }
+          walletDialogActive = false;
+        });
+        document.querySelectorAll("[data-close-dialog]").forEach((button) => {
+          button.addEventListener("click", () => button.closest("dialog").close());
+        });
+        document.querySelectorAll("[data-wallet-adapter], [data-dialog-wallet]").forEach((button) => {
+          button.addEventListener("click", () => {
+            pendingWalletAdapter = safeWalletAdapter(
+              button.dataset.walletAdapter || button.dataset.dialogWallet
+            );
+            trackEvent("wallet_option_selected", {
+              adapter: pendingWalletAdapter,
+              location: button.dataset.dialogWallet ? "dialog" : "web3_panel",
+            });
+          });
+        });
+        window.addEventListener("tlama-wallet-connected", () => {
+          walletDialogCompleted = walletDialog.open;
+          trackEvent("wallet_connected", { adapter: pendingWalletAdapter });
+        });
+        window.addEventListener("tlama-wallet-connection-failed", (event) => {
+          const stage = event.detail && event.detail.stage;
+          trackEvent("wallet_connection_failed", {
+            adapter: safeWalletAdapter(event.detail && event.detail.adapter),
+            stage: ["unavailable_setup", "provider_rejected", "connection_failed"].includes(stage)
+              ? stage
+              : "connection_failed",
+          });
+        });
+        document.querySelectorAll("[data-dialog-wallet]").forEach((button) => {
+          button.addEventListener("click", async () => {
+            const walletOptions = Array.from(
+              walletDialog.querySelectorAll("[data-dialog-wallet]")
+            );
+            walletOptions.forEach((option) => {
+              option.disabled = true;
+            });
+            walletDialogStatus.textContent = `Opening ${button.textContent.replace("Connect ", "")}…`;
+            walletDialogStatus.classList.remove("error");
+            try {
+              await connectWallet(button.dataset.dialogWallet);
+              walletDialog.close();
+            } catch (error) {
+              const message = error && error.message
+                ? error.message
+                : "Wallet connection was cancelled. Try again or choose another wallet.";
+              walletStatus.textContent = message;
+              walletDialogStatus.textContent = `${message} Try again or choose another wallet.`;
+              walletDialogStatus.classList.add("error");
+            } finally {
+              walletOptions.forEach((option) => {
+                option.disabled = false;
+              });
+              if (walletDialog.open) button.focus();
+            }
+          });
+        });
+
+        const draw = (now) => {
+          const delta = Math.min(0.05, (now - lastFrame) / 1000);
+          lastFrame = now;
+          const levelNumber = Number(currentLevel.number);
+          if (levelNumber === 10) {
+            const correctionDistance = Math.hypot(
+              authoritativeCitadelPosition.x - localPosition.x,
+              authoritativeCitadelPosition.y - localPosition.y,
+            );
+            if (correctionDistance > 0.22) {
+              localPosition = { ...authoritativeCitadelPosition };
+            } else {
+              const smoothing = 1 - Math.exp(-20 * delta);
+              localPosition.x += (authoritativeCitadelPosition.x - localPosition.x) * smoothing;
+              localPosition.y += (authoritativeCitadelPosition.y - localPosition.y) * smoothing;
+            }
+          }
+          let dx = 0;
+          let dy = 0;
+          const isStunned = now < localStunnedUntil || localGameOver;
+          if (!isStunned) {
+            if (keys.has("ArrowUp") || keys.has("KeyW")) dy -= 1;
+            if (keys.has("ArrowDown") || keys.has("KeyS")) dy += 1;
+            if (keys.has("ArrowLeft") || keys.has("KeyA")) dx -= 1;
+            if (keys.has("ArrowRight") || keys.has("KeyD")) dx += 1;
+            dx += touchVector.x;
+            dy += touchVector.y;
+          }
+          const length = Math.hypot(dx, dy) || 1;
+          if (levelNumber !== 7 && levelNumber !== 8 && levelNumber !== 10 && (dx || dy)) {
+            localPosition.x = Math.max(currentLevel.board_min, Math.min(currentLevel.board_max, localPosition.x + (dx / length) * delta * currentLevel.speed));
+            localPosition.y = Math.max(currentLevel.board_min, Math.min(currentLevel.board_max, localPosition.y + (dy / length) * delta * currentLevel.speed));
+          }
+
+          if (!localGameOver && levelNumber === 8 && now - lastPositionSent > 80) {
+            send({ type: "submarine_input", thrust: dy > 0, sequence: ++vehicleInputSequence });
+            lastPositionSent = now;
+          } else if (!localGameOver && levelNumber === 7 && now - lastPositionSent > 80) {
+            send({ type: "vehicle_input", thrust: dy < 0, fire: false, sequence: ++vehicleInputSequence });
+            lastPositionSent = now;
+          } else if (!localGameOver && levelNumber === 9 && now - lastPositionSent > 80) {
+            const axis = Math.max(-1, Math.min(1, Math.round(dx)));
+            send({ type: "platformer_input", run_axis: axis, jump_pressed: false, sequence: ++platformerInputSequence });
+            lastPositionSent = now;
+          } else if (!localGameOver && levelNumber === 10 && now - lastPositionSent > 40) {
+            const axisX = quantizeCitadelAxis(dx);
+            const axisY = quantizeCitadelAxis(dy);
+            send({ type: "citadel_input", booster_x: axisX, booster_y: axisY,
+              charge_pressed: keys.has("Space") || citadelChargeHeld, fire_released: false,
+              sequence: ++vehicleInputSequence });
+            lastPositionSent = now;
+          } else if (!localGameOver && levelNumber !== 7 && levelNumber !== 8 && now - lastPositionSent > 60) {
+            send({ type: "position", x: localPosition.x, y: localPosition.y });
+            lastPositionSent = now;
+          }
+
+          const width = canvas.width;
+          const height = canvas.height;
+          const andes = currentLevel.number === 1;
+          const woods = currentLevel.number === 2;
+          const farm = currentLevel.number === 3;
+          const castle = currentLevel.number === 4;
+          const labyrinth = currentLevel.number === 5 || currentLevel.number === 6;
+           const caverns = currentLevel.number === 7;
+           const trench = currentLevel.number === 8;
+          const sky = currentLevel.number === 9;
+           const citadel = currentLevel.number === 10;
+          context.clearRect(0, 0, 1, 1);
+          const background = context.createLinearGradient(0, 0, 1, 1);
+          if (andes) {
+            background.addColorStop(0, "#19351e"); background.addColorStop(1, "#2b4c2b");
+          } else if (woods) {
+            background.addColorStop(0, "#05180f"); background.addColorStop(1, "#12301c");
+          } else if (farm) {
+            background.addColorStop(0, "#1c0a1a"); background.addColorStop(1, "#361622");
+          } else if (castle) {
+            background.addColorStop(0, "#071119"); background.addColorStop(1, "#230c31");
+           } else if (caverns) {
+             background.addColorStop(0, "#05051a"); background.addColorStop(1, "#24103c");
+           } else if (trench) {
+             background.addColorStop(0, "#031d4d"); background.addColorStop(1, "#010a24");
+           } else if (citadel) {
+             background.addColorStop(0, "#24030d"); background.addColorStop(1, "#08000a");
+           } else {
+            background.addColorStop(0, "#010111"); background.addColorStop(1, "#070216");
+          }
+          context.fillStyle = background;
+          context.fillRect(0, 0, 1, 1);
+           if (citadel) {
+             const boss = level10World.boss || { x: .5, y: .42, hp: 300, phase: 1 };
+             context.save();
+             context.shadowBlur = .06; context.shadowColor = "#ff174f";
+             context.fillStyle = boss.phase === 1 ? "#ff315f" : boss.phase === 2 ? "#ff9f43" : "#fff15c";
+             context.beginPath(); context.arc(boss.x, boss.y, .12 + Math.sin(now / 180) * .01, 0, Math.PI * 2); context.fill();
+             context.shadowBlur = 0; context.strokeStyle = "#ff174f"; context.lineWidth = .008;
+             (level10World.hazards || []).forEach((hazard) => {
+               context.beginPath();
+               if (hazard.kind === "circular_ring") context.arc(hazard.x, hazard.y, hazard.radius, 0, Math.PI * 2);
+               else if (hazard.kind === "grid_sweep") context.moveTo(hazard.axis === "x" ? hazard.position : 0, hazard.axis === "x" ? 0 : hazard.position);
+               context.stroke();
+             });
+             (level10World.drones || []).forEach((drone) => { context.fillStyle = "#ff547c"; context.beginPath(); context.arc(drone.x, drone.y, .035, 0, Math.PI * 2); context.fill(); });
+             Object.values(level10World.orbs || {}).filter((orb) => !orb.collected).forEach((orb) => { context.fillStyle = "#ffe66d"; context.beginPath(); context.arc(orb.x, orb.y, .014, 0, Math.PI * 2); context.fill(); });
+             context.restore();
+           }
+           if (caverns) {
+             // Crisp high-contrast cavern silhouette; all object coordinates come from
+             // the server snapshot rather than local prediction.
+             context.fillStyle = "#120d2b";
+             context.fillRect(0, 0, 1, 0.12);
+             context.fillRect(0, 0.88, 1, 0.12);
+             context.fillStyle = "#5b3c78";
+             for (let index = 0; index < 12; index += 1) {
+               const x = (index / 12 + (level7World.camera_progress * 0.2) % 0.08) % 1;
+               context.fillRect(x, 0.12, 0.035, 0.018);
+               context.fillRect(x, 0.862, 0.04, 0.018);
+             }
+             context.fillStyle = "#ffe477";
+             Object.values(level7World.orbs || {}).forEach((orb) => {
+               context.fillRect(orb.x - 0.012, orb.y - 0.012, 0.024, 0.024);
+             });
+             context.fillStyle = "#d64e78";
+             (level7World.blocks || []).filter((block) => !block.destroyed).forEach((block) => {
+               context.fillRect(block.x - 0.025, block.y - 0.035, 0.05, 0.07);
+             });
+             context.fillStyle = "#ff6b55";
+             (level7World.projectiles || []).forEach((projectile) => context.fillRect(projectile.x, projectile.y - 0.006, 0.035, 0.012));
+             context.fillStyle = "#8cecff";
+             (level7World.wardens || []).forEach((warden) => context.fillRect(warden.x - 0.025, warden.y - 0.025, 0.05, 0.05));
+           }
+
+          context.strokeStyle = andes ? "rgba(255, 204, 0, 0.4)" : woods ? "rgba(100, 255, 100, 0.4)" : farm ? "rgba(255, 150, 50, 0.4)" : castle ? "rgba(255, 154, 98, 0.5)" : "rgba(104, 231, 255, 0.6)";
+          context.shadowBlur = (andes || woods || farm || labyrinth) ? 0.015 : 0;
+          context.shadowColor = andes ? "#ffcc00" : woods ? "#55ff55" : farm ? "#ff9933" : labyrinth ? "#68e7ff" : "#000";
+          context.lineWidth = 0.004;
+          context.strokeRect(
+            currentLevel.board_min,
+            currentLevel.board_min,
+            currentLevel.board_max - currentLevel.board_min,
+            currentLevel.board_max - currentLevel.board_min
+          );
+          const gridPulse = (andes || woods || farm) ? 1 + Math.sin(now / 240) * 0.055 : 1;
+          const gridStep = 0.08 * gridPulse;
+          context.lineWidth = (andes || woods || farm) ? 0.0022 : 0.001;
+          for (let line = gridStep; line < 1; line += gridStep) {
+            context.strokeStyle = andes ? "rgba(255, 204, 0, 0.18)" : woods ? "rgba(50, 200, 50, 0.15)" : farm ? "rgba(200, 50, 150, 0.15)" : "rgba(179, 193, 255, 0.08)";
+            context.shadowColor = context.strokeStyle;
+            context.beginPath(); context.moveTo(line, 0); context.lineTo(line, 1); context.stroke();
+            context.beginPath(); context.moveTo(0, line); context.lineTo(1, line); context.stroke();
+          }
+          context.shadowBlur = 0;
+
+          if (andes) {
+            context.fillStyle = "#535d5d";
+            context.shadowColor = "#000";
+            context.shadowBlur = 6;
+            const drawIncaWall = (startX, startY, stones) => {
+               for (let i = 0; i < stones; i += 1) {
+                 const sx = startX + (i % 3) * 0.035 + (Math.sin(i) * 0.005);
+                 const sy = startY + Math.floor(i / 3) * 0.045;
+                 context.fillRect(sx, sy, 0.03, 0.04);
+                 context.strokeStyle = "#384242";
+                 context.lineWidth = 0.002;
+                 context.strokeRect(sx, sy, 0.03, 0.04);
+               }
+            };
+            drawIncaWall(0.06, 0.08, 9);
+            drawIncaWall(0.85, 0.78, 6);
+            context.shadowBlur = 0;
+
+            for (let t = 0; t < 5; t += 1) {
+              const tY = 0.25 + t * 0.16;
+              const sway = Math.sin(now / 2000 + t) * 0.02;
+
+              const terrGrad = context.createLinearGradient(0, tY - 0.1, 0, tY + 0.2);
+              terrGrad.addColorStop(0, t % 2 === 0 ? "#34663c" : "#457d42");
+              terrGrad.addColorStop(1, t % 2 === 0 ? "#2a5430" : "#386b36");
+              context.fillStyle = terrGrad;
+
+              context.beginPath();
+              context.moveTo(0, tY + sway);
+              context.quadraticCurveTo(0.5, tY - 0.1 - sway * 2, 1, tY + sway);
+              context.lineTo(1, 1);
+              context.lineTo(0, 1);
+              context.fill();
+
+              context.strokeStyle = "#828f8a";
+              context.lineWidth = 0.005;
+              context.beginPath();
+              context.moveTo(0, tY + sway);
+              context.quadraticCurveTo(0.5, tY - 0.1 - sway * 2, 1, tY + sway);
+              context.stroke();
+
+              for (let k = 0; k <= 20; k += 1) {
+                const lx = k / 20;
+                const p0 = tY + sway, p1 = tY - 0.1 - sway * 2, p2 = tY + sway;
+                const ly = (1 - lx) * (1 - lx) * p0 + 2 * (1 - lx) * lx * p1 + lx * lx * p2;
+                context.beginPath();
+                context.moveTo(lx, ly);
+                context.lineTo(lx, ly + 0.015);
+                context.lineWidth = 0.003;
+                context.strokeStyle = "#53635e";
+                context.stroke();
+              }
+            }
+            if (sky) {
+              const skyGradient = context.createLinearGradient(0, 0, 0, 1);
+              skyGradient.addColorStop(0, "#251064"); skyGradient.addColorStop(.48, "#19bde0"); skyGradient.addColorStop(1, "#ffd35a");
+              context.fillStyle = skyGradient; context.fillRect(0, 0, 1, 1);
+              context.fillStyle = "rgba(255,255,255,.22)";
+              for (let c = 0; c < 9; c += 1) {
+                const cx = (c * .23 - (level9World.camera_progress || 0) * .12) % 1;
+                const cy = .12 + (c % 3) * .18;
+                context.beginPath(); context.arc(cx < 0 ? cx + 1 : cx, cy, .055, 0, Math.PI * 2); context.fill();
+              }
+              for (const platform of [...(level9World.platforms || []), ...(level9World.cloud_platforms || [])]) {
+                context.fillStyle = platform.id && platform.id.startsWith("cloud") ? "#f5f8ff" : "#d4495f";
+                context.fillRect(platform.x - (level9World.camera_progress || 0), platform.y, platform.w, platform.h);
+              }
+              for (const pipe of level9World.pipes || []) {
+                context.fillStyle = "#38d28f"; context.fillRect(pipe.x - (level9World.camera_progress || 0), pipe.y, pipe.w, pipe.h);
+              }
+              for (const block of level9World.question_blocks || []) {
+                context.fillStyle = block.hit ? "#9b7a63" : "#ffd43b"; context.fillRect(block.x - (level9World.camera_progress || 0), block.y, block.w, block.h);
+                context.fillStyle = "#5b2677"; context.font = "bold 18px monospace"; context.fillText("?", block.x + .1 - (level9World.camera_progress || 0), block.y + .25);
+              }
+              context.fillStyle = "#fff36a";
+              Object.values(level9World.orbs || {}).filter((orb) => !orb.collected).forEach((orb) => {
+                context.beginPath(); context.arc(orb.x - (level9World.camera_progress || 0), orb.y, .018, 0, Math.PI * 2); context.fill();
+              });
+              (level9World.wardens || []).forEach((warden) => {
+                context.fillStyle = warden.kind === "spiky_cloud" ? "#ff69d7" : "#552f9e";
+                context.beginPath(); context.arc(warden.x - (level9World.camera_progress || 0), warden.y, .045, 0, Math.PI * 2); context.fill();
+              });
+              context.fillStyle = "#fff";
+              context.save();
+              context.translate(localPosition.x - (level9World.camera_progress || 0), localPosition.y);
+              context.scale(authoritativeFacing.get(localPlayerId) || 1, 1);
+              context.fillRect(-.045, -.06, .09, .12);
+              context.restore();
+            }
+
+            const wind = Math.sin(now / 600) * 0.03;
+            for (let g = 0; g < 40; g += 1) {
+               const gx = (0.05 * g * 1.3) % 1;
+               const gy = 0.1 + (g * 0.17) % 0.85;
+               context.strokeStyle = "#d4af37";
+               context.lineWidth = 0.003;
+               context.lineCap = "round";
+
+               context.beginPath();
+               context.moveTo(gx, gy);
+               context.quadraticCurveTo(gx + wind + 0.01, gy - 0.02, gx + wind + 0.02, gy - 0.04);
+               context.stroke();
+
+               context.beginPath();
+               context.moveTo(gx, gy);
+               context.quadraticCurveTo(gx + wind - 0.01, gy - 0.01, gx + wind - 0.02, gy - 0.03);
+               context.stroke();
+            }
+            context.lineCap = "butt";
+
+            context.fillStyle = "#1da5b8";
+            context.beginPath();
+            context.moveTo(0.3, 0);
+            context.bezierCurveTo(0.4, 0.3, 0.2, 0.6, 0.25, 1);
+            context.lineTo(0.35, 1);
+            context.bezierCurveTo(0.3, 0.6, 0.5, 0.3, 0.4, 0);
+            context.fill();
+
+            context.strokeStyle = "#6df0ff";
+            context.lineWidth = 0.002;
+            for (let r = 0; r < 12; r += 1) {
+               const flow = (now / 2000 + r * 0.1) % 1;
+               const rx = 0.3 + (flow * 0.05) + Math.sin(flow * Math.PI) * 0.05;
+               context.beginPath();
+               context.moveTo(rx, flow);
+               context.lineTo(rx + 0.01, flow + 0.02);
+               context.stroke();
+            }
+
+            const cx = 0.5 + Math.cos(now / 3500) * 0.4;
+            const cy = 0.5 + Math.sin(now / 3500) * 0.4;
+            context.fillStyle = "rgba(0, 0, 0, 0.12)";
+            context.beginPath();
+            context.ellipse(cx, cy, 0.08, 0.02, Math.atan2(Math.cos(now / 3500), -Math.sin(now / 3500)), 0, Math.PI * 2);
+            context.fill();
+
+            for (let c = 0; c < 6; c += 1) {
+              const cloudX = ((now / 6000) + c * 0.2) % 1.4 - 0.2;
+              const cloudY = (c * 0.18) % 1;
+              context.fillStyle = "rgba(255, 255, 255, 0.05)";
+              context.beginPath();
+              context.ellipse(cloudX, cloudY, 0.18, 0.07, 0, 0, Math.PI * 2);
+              context.fill();
+              context.ellipse(cloudX + 0.05, cloudY - 0.03, 0.12, 0.05, 0, 0, Math.PI * 2);
+              context.fill();
+            }
+          } else if (woods) {
+            const fireflyPulse = 0.45 + Math.sin(now / 320) * 0.18;
+            for (let tree = 0; tree < 8; tree += 1) {
+              const tx = 0.04 + tree * 0.135;
+              context.fillStyle = "#102417";
+              context.fillRect(tx, 0.08, 0.032, 0.84);
+              context.fillStyle = tree % 2 ? "#164b2d" : "#0e653b";
+              context.shadowColor = "#45ff94";
+              context.shadowBlur = 9;
+              context.beginPath();
+              context.arc(tx + 0.016, 0.14 + (tree % 3) * 0.08, 0.105, 0, Math.PI * 2);
+              context.fill();
+            }
+            context.shadowBlur = 0;
+            for (let firefly = 0; firefly < 22; firefly += 1) {
+              const fx = (firefly * 0.193 + Math.sin(now / 1200 + firefly) * 0.025) % 1;
+              const fy = 0.12 + ((firefly * 0.137) % 0.76);
+              context.fillStyle = `rgba(190,255,91,${fireflyPulse})`;
+              context.beginPath();
+              context.arc(fx, fy, 0.0035, 0, Math.PI * 2);
+              context.fill();
+            }
+            context.strokeStyle = "rgba(72,255,150,.28)";
+            context.lineWidth = 0.006;
+            context.beginPath();
+            context.moveTo(0.05, 0.83);
+            context.bezierCurveTo(0.27, 0.68, 0.68, 0.98, 0.95, 0.77);
+            context.stroke();
+          } else if (farm) {
+            context.fillStyle = "rgba(255,168,63,.08)";
+            for (let row = 0; row < 8; row += 1) {
+              context.beginPath();
+              context.moveTo(0.5, 0.43);
+              context.lineTo(row * 0.145 - 0.02, 1);
+              context.lineTo(row * 0.145 + 0.035, 1);
+              context.closePath();
+              context.fill();
+            }
+            context.fillStyle = "#5b1733";
+            context.strokeStyle = "#ff8b43";
+            context.lineWidth = 0.004;
+            context.shadowColor = "#ff6b5f";
+            context.shadowBlur = 10;
+            context.fillRect(0.08, 0.13, 0.18, 0.18);
+            context.strokeRect(0.08, 0.13, 0.18, 0.18);
+            context.beginPath();
+            context.moveTo(0.055, 0.14);
+            context.lineTo(0.17, 0.055);
+            context.lineTo(0.285, 0.14);
+            context.closePath();
+            context.fill();
+            context.stroke();
+            context.fillStyle = "#ffb14c";
+            context.fillRect(0.145, 0.21, 0.055, 0.10);
+            context.shadowBlur = 0;
+            context.strokeStyle = "rgba(255,210,108,.48)";
+            context.lineWidth = 0.004;
+            for (let fence = 0; fence < 7; fence += 1) {
+              const fenceX = 0.08 + fence * 0.145;
+              context.beginPath();
+              context.moveTo(fenceX, 0.72);
+              context.lineTo(fenceX, 0.88);
+              context.stroke();
+            }
+            context.beginPath();
+            context.moveTo(0.06, 0.77);
+            context.lineTo(0.96, 0.77);
+            context.moveTo(0.06, 0.84);
+            context.lineTo(0.96, 0.84);
+            context.stroke();
+           }
+
+           if (trench) {
+             context.fillStyle = "#061334";
+             context.fillRect(0, 0, 1, 0.14); context.fillRect(0, 0.86, 1, 0.14);
+             context.fillStyle = "#ff5a3d";
+             (level8World.vents || []).filter((vent) => vent.active).forEach((vent) => {
+               context.beginPath(); context.arc(vent.x, vent.y, vent.radius * 0.45, 0, Math.PI * 2); context.fill();
+             });
+             context.fillStyle = "#f8f06a";
+             Object.values(level8World.orbs || {}).filter((orb) => !orb.collected).forEach((orb) => {
+               context.beginPath(); context.arc(orb.x, orb.y, 0.012, 0, Math.PI * 2); context.fill();
+             });
+             context.fillStyle = "#8cecff";
+             Object.values(level8World.bubbles || {}).filter((bubble) => !bubble.collected).forEach((bubble) => {
+               context.beginPath(); context.arc(bubble.x, bubble.y, 0.014, 0, Math.PI * 2); context.fill();
+             });
+             (level8World.wardens || []).forEach((warden) => {
+               context.fillStyle = warden.charging ? "#ff315e" : "#72dfff";
+               context.fillRect(warden.x - 0.025, warden.y - 0.018, 0.05, 0.036);
+               if (warden.light_cone) { context.globalAlpha = 0.16; context.fillRect(warden.x - 0.35, warden.y - 0.18, 0.35, 0.36); context.globalAlpha = 1; }
+             });
+             context.fillStyle = "#d9f7ff";
+             context.save();
+             context.translate(localPosition.x, localPosition.y);
+             context.scale(authoritativeFacing.get(localPlayerId) || 1, 1);
+             context.fillRect(-0.045, -0.025, 0.09, 0.05);
+             context.restore();
+           }
+
+           if (castle) {
+            const moonGlow = context.createRadialGradient(0.79, 0.16, 0.01, 0.79, 0.16, 0.18);
+            moonGlow.addColorStop(0, "rgba(255,250,210,.78)");
+            moonGlow.addColorStop(0.42, "rgba(189,185,255,.18)");
+            moonGlow.addColorStop(1, "rgba(90,48,155,0)");
+            context.fillStyle = moonGlow;
+            context.fillRect(0.58, 0, 0.42, 0.38);
+            context.shadowColor = "#fff1b8";
+            context.shadowBlur = 18;
+            context.fillStyle = "#eee7c9";
+            context.beginPath();
+            context.arc(0.79, 0.16, 0.067, 0, Math.PI * 2);
+            context.fill();
+            context.shadowBlur = 0;
+            context.fillStyle = "rgba(119,110,135,.22)";
+            for (const crater of [[0.765,0.14,0.012],[0.814,0.176,0.016],[0.794,0.12,0.008],[0.755,0.184,0.007]]) {
+              context.beginPath();
+              context.arc(crater[0], crater[1], crater[2], 0, Math.PI * 2);
+              context.fill();
+            }
+            for (let bat = 0; bat < 9; bat += 1) {
+              const angle = now / (1500 + bat * 91) + bat * 1.7;
+              const bx = 0.79 + Math.cos(angle) * (0.10 + (bat % 3) * 0.045);
+              const by = 0.17 + Math.sin(angle * 1.4) * (0.07 + (bat % 2) * 0.04);
+              const flap = Math.sin(now / 95 + bat) * 0.014;
+              context.strokeStyle = "rgba(9,3,18,.95)";
+              context.lineWidth = 0.006;
+              context.beginPath();
+              context.moveTo(bx, by);
+              context.quadraticCurveTo(bx - 0.012, by - flap, bx - 0.026, by + 0.004);
+              context.moveTo(bx, by);
+              context.quadraticCurveTo(bx + 0.012, by - flap, bx + 0.026, by + 0.004);
+              context.stroke();
+            }
+            context.fillStyle = "rgba(8,4,18,.88)";
+            context.fillRect(0.08, 0.18, 0.84, 0.61);
+            context.fillStyle = "#2a1b38";
+            for (let tower = 0; tower < 4; tower += 1) {
+              const x = 0.1 + tower * 0.25;
+              context.fillRect(x, 0.20, 0.16, 0.59);
+              for (let merlon = 0; merlon < 3; merlon += 1) {
+                context.fillRect(x + merlon * 0.055, 0.15, 0.035, 0.09);
+              }
+            }
+            context.fillStyle = `rgba(164,255,204,${0.24 + Math.sin(now / 260) * 0.09})`;
+            for (let windowIndex = 0; windowIndex < 6; windowIndex += 1) {
+              const x = 0.15 + (windowIndex % 3) * 0.29;
+              const y = 0.32 + Math.floor(windowIndex / 3) * 0.25;
+              context.beginPath();
+              context.arc(x, y, 0.025, Math.PI, 0);
+              context.fill();
+              context.fillRect(x - 0.025, y, 0.05, 0.07);
+            }
+            const waterShift = (now / 9000) % 0.08;
+            context.fillStyle = "#071c32";
+            context.fillRect(0.05, 0.76, 0.90, 0.18);
+            context.strokeStyle = "rgba(80,216,255,.42)";
+            context.lineWidth = 0.003;
+            for (let ripple = -1; ripple < 13; ripple += 1) {
+              const ry = 0.78 + ripple * 0.014;
+              context.beginPath();
+              context.moveTo(0.05, ry);
+              for (let rx = 0.05; rx <= 0.95; rx += 0.04) {
+                context.lineTo(rx, ry + Math.sin(rx * 44 + now / 420 + ripple) * 0.004);
+              }
+              context.stroke();
+            }
+            context.fillStyle = "#59402f";
+            context.strokeStyle = "#d4a86d";
+            context.lineWidth = 0.005;
+            context.beginPath();
+            context.moveTo(0.41, 0.68);
+            context.lineTo(0.59, 0.68);
+            context.lineTo(0.64, 0.91);
+            context.lineTo(0.36, 0.91);
+            context.closePath();
+            context.fill();
+            context.stroke();
+            for (let plank = 0; plank < 6; plank += 1) {
+              const py = 0.70 + plank * 0.035;
+              context.beginPath();
+              context.moveTo(0.405 - plank * 0.007, py);
+              context.lineTo(0.595 + plank * 0.007, py);
+              context.stroke();
+            }
+            context.strokeStyle = "#b9a6c7";
+            context.lineWidth = 0.004;
+            context.beginPath();
+            context.moveTo(0.40, 0.68);
+            context.lineTo(0.31, 0.46);
+            context.moveTo(0.60, 0.68);
+            context.lineTo(0.69, 0.46);
+            context.stroke();
+            for (let fog = 0; fog < 6; fog += 1) {
+              const fx = ((now / 11000) + fog * 0.21) % 1.25 - 0.15;
+              context.fillStyle = "rgba(180,162,214,.055)";
+              context.beginPath();
+              context.ellipse(fx, 0.72 + (fog % 3) * 0.08, 0.18, 0.035, 0, 0, Math.PI * 2);
+              context.fill();
+            }
+            context.shadowBlur = 0;
+          }
+
+          if (labyrinth) {
+            const pulse = 1 + Math.sin(now / 500) * 0.1;
+            for (let i = 0.1; i < 1; i += 0.1) {
+              context.strokeStyle = `rgba(104, 231, 255, ${0.05 * pulse})`;
+              context.lineWidth = 0.002;
+              context.beginPath(); context.moveTo(i, 0); context.lineTo(i, 1); context.stroke();
+              context.beginPath(); context.moveTo(0, i); context.lineTo(1, i); context.stroke();
+            }
+          }
+
+          if (andes) {
+            hazards.pumas.filter(p => p.active).forEach((puma, i) => {
+              const r = puma.radius;
+              const stride = Math.sin(now / 75 + i * 1.8);
+              const facing = puma.direction || 1;
+              context.save();
+              context.translate(puma.x, puma.y + Math.abs(stride) * 0.003);
+              context.scale(facing, 1);
+
+              context.fillStyle = "rgba(0,0,0,.22)";
+              context.beginPath();
+              context.ellipse(0, r * 0.65, r * 1.65, r * 0.38, 0, 0, Math.PI * 2);
+              context.fill();
+
+              context.strokeStyle = "#5d351d";
+              context.fillStyle = "#b77943";
+              context.lineWidth = 0.003;
+              context.beginPath();
+              context.ellipse(0, 0, r * 1.35, r * 0.72, -0.06, 0, Math.PI * 2);
+              context.fill();
+              context.stroke();
+
+              context.beginPath();
+              context.moveTo(-r * 1.15, -r * 0.15);
+              context.bezierCurveTo(-r * 2.25, -r * 0.65, -r * 2.3, r * 0.25, -r * 1.75, r * 0.35);
+              context.strokeStyle = "#b77943";
+              context.lineWidth = r * 0.34;
+              context.lineCap = "round";
+              context.stroke();
+
+              context.fillStyle = "#c98a50";
+              context.strokeStyle = "#fff0b8";
+              context.lineWidth = 0.005;
+              context.beginPath();
+              context.arc(r * 1.15, -r * 0.38, r * 0.62, 0, Math.PI * 2);
+              context.fill();
+              context.stroke();
+              context.beginPath();
+              context.moveTo(r * 0.78, -r * 0.78);
+              context.lineTo(r * 0.9, -r * 1.28);
+              context.lineTo(r * 1.18, -r * 0.88);
+              context.moveTo(r * 1.28, -r * 0.9);
+              context.lineTo(r * 1.58, -r * 1.28);
+              context.lineTo(r * 1.58, -r * 0.7);
+              context.fill();
+              context.stroke();
+
+              context.strokeStyle = "#704021";
+              context.lineWidth = r * 0.22;
+              [-0.72, 0.68].forEach((x, leg) => {
+                context.beginPath();
+                context.moveTo(r * x, r * 0.4);
+                context.lineTo(r * (x + stride * (leg ? -0.32 : 0.32)), r * 1.03);
+                context.stroke();
+              });
+
+              context.fillStyle = "#f4d7a7";
+              context.beginPath();
+              context.ellipse(r * 1.48, -r * 0.2, r * 0.3, r * 0.22, 0, 0, Math.PI * 2);
+              context.fill();
+              context.fillStyle = "#111";
+              context.beginPath();
+              context.arc(r * 1.35, -r * 0.53, r * 0.08, 0, Math.PI * 2);
+              context.arc(r * 1.72, -r * 0.2, r * 0.07, 0, Math.PI * 2);
+              context.fill();
+              context.fillStyle = "#ffef9d";
+              context.font = `900 ${Math.max(0.016, r * 0.38)}px system-ui, sans-serif`;
+              context.textAlign = "center";
+              context.fillText("PUMA", 0, -r * 1.35);
+              context.restore();
+            });
+          } else if (woods) {
+            hazards.logs.filter(l => l.active).forEach((log, i) => {
+              const r = log.radius;
+              context.save();
+              context.translate(log.x, log.y);
+              context.rotate((now / 200) * (i % 2 === 0 ? 1 : -1)); // rolling motion
+
+              context.fillStyle = "#1a0f08";
+              context.strokeStyle = "#55ff55";
+              context.lineWidth = 0.004;
+              context.shadowColor = "#55ff55";
+              context.shadowBlur = 10;
+
+              context.beginPath();
+              context.arc(0, 0, r, 0, Math.PI * 2);
+              context.fill();
+              context.stroke();
+
+              context.strokeStyle = "#22bb22";
+              context.lineWidth = 0.002;
+              for(let ring = 1; ring < 4; ring++) {
+                 context.beginPath();
+                 context.arc(0, 0, r * (ring * 0.25), 0, Math.PI * 2);
+                 context.stroke();
+              }
+
+              context.fillStyle = "#22bb22";
+              for(let b=0; b<8; b++) {
+                 context.beginPath();
+                 context.arc(0, 0, r, b * Math.PI/4, b * Math.PI/4 + 0.15);
+                 context.lineTo(0,0);
+                 context.fill();
+              }
+
+              context.restore();
+            });
+          } else if (farm) {
+            hazards.tractors.filter(t => t.active).forEach((tractor, i) => {
+              const r = tractor.radius;
+              context.save();
+              context.translate(tractor.x, tractor.y);
+              const bob = Math.sin(now / 50) * 0.005;
+              context.translate(0, bob);
+
+              context.shadowBlur = 15;
+              context.shadowColor = "#ff9933";
+              context.strokeStyle = "#ff9933";
+              context.lineWidth = 0.004;
+
+              context.fillStyle = "#330011";
+              context.fillRect(-r*1.2, -r*0.6, r*2.4, r*1.2);
+              context.strokeRect(-r*1.2, -r*0.6, r*2.4, r*1.2);
+
+              context.fillStyle = "#222";
+              context.fillRect(r*0.2, -r*1.2, r*0.6, r*0.6);
+              context.strokeRect(r*0.2, -r*1.2, r*0.6, r*0.6);
+
+              context.fillStyle = "#000";
+              context.beginPath();
+              context.arc(-r*0.6, r*0.6, r*0.5, 0, Math.PI * 2);
+              context.fill(); context.stroke();
+
+              context.beginPath();
+              context.arc(r*0.6, r*0.6, r*0.8, 0, Math.PI * 2);
+              context.fill(); context.stroke();
+
+              context.fillStyle = "#ff9933";
+              context.beginPath();
+              context.arc(-r*0.6, r*0.6, r*0.2, 0, Math.PI * 2);
+              context.fill();
+
+              context.beginPath();
+              context.arc(r*0.6, r*0.6, r*0.3, 0, Math.PI * 2);
+              context.fill();
+
+              context.restore();
+            });
+          }
+
+          if (castle) {
+            ghosts.filter((ghost) => ghost.active).forEach((ghost, index) => {
+              const bob = Math.sin(now / 180 + index) * 0.009;
+              context.save();
+              context.translate(ghost.x, ghost.y + bob);
+              context.globalAlpha = 0.72;
+              context.shadowBlur = 18;
+              context.shadowColor = "#c99cff";
+              context.fillStyle = "#e7d8ff";
+              context.beginPath();
+              context.arc(0, -0.012, 0.035, Math.PI, 0);
+              context.lineTo(0.035, 0.035);
+              context.quadraticCurveTo(0.018, 0.02, 0, 0.038);
+              context.quadraticCurveTo(-0.018, 0.02, -0.035, 0.035);
+              context.closePath();
+              context.fill();
+              context.fillStyle = "#3e235f";
+              context.beginPath();
+              context.arc(-0.012, -0.011, 0.005, 0, Math.PI * 2);
+              context.arc(0.012, -0.011, 0.005, 0, Math.PI * 2);
+              context.fill();
+              context.restore();
+            });
+          }
+
+          if (labyrinth && hazards.maze) {
+            const walls = hazards.maze.filter(h => h.active && h.kind === 'maze_wall');
+            const wardens = hazards.maze.filter(h => h.active && h.kind === 'maze_warden');
+
+            context.fillStyle = "#0a0715";
+            context.strokeStyle = "rgba(104, 231, 255, 0.9)";
+            context.lineWidth = 0.005;
+            context.shadowColor = "#68e7ff";
+            context.shadowBlur = 10;
+            walls.forEach(wall => {
+              const r = wall.radius;
+              context.beginPath();
+              context.moveTo(wall.x, wall.y - r);
+              context.lineTo(wall.x + r, wall.y);
+              context.lineTo(wall.x, wall.y + r);
+              context.lineTo(wall.x - r, wall.y);
+              context.closePath();
+              context.fill();
+              context.stroke();
+            });
+
+            let closestWardenDist = Infinity;
+            wardens.forEach((warden, index) => {
+               const r = warden.radius;
+               const dist = Math.hypot(localPosition.x - warden.x, localPosition.y - warden.y);
+               if (dist < closestWardenDist) closestWardenDist = dist;
+               context.save();
+               context.translate(warden.x, warden.y);
+               context.rotate((now / 400) * (index % 2 === 0 ? 1 : -1));
+                const wardenColors = ["#ff1bd1", "#68e7ff", "#ff9a62", "#9dff68"];
+                context.shadowColor = wardenColors[index % wardenColors.length];
+               context.shadowBlur = 18;
+                context.fillStyle = `${wardenColors[index % wardenColors.length]}33`;
+                context.strokeStyle = wardenColors[index % wardenColors.length];
+               context.lineWidth = 0.004;
+               context.beginPath();
+               for (let p = 0; p < 8; p++) {
+                 const a = p * Math.PI / 4;
+                 const a2 = a + Math.PI / 8;
+                 context.lineTo(Math.cos(a) * r, Math.sin(a) * r);
+                 context.lineTo(Math.cos(a2) * r * 0.4, Math.sin(a2) * r * 0.4);
+               }
+               context.closePath();
+               context.fill();
+               context.stroke();
+               context.fillStyle = "#fff";
+               context.shadowBlur = 0;
+               context.beginPath();
+               context.arc(0, 0, r * 0.15, 0, Math.PI * 2);
+               context.fill();
+               context.restore();
+            });
+            context.shadowBlur = 0;
+
+            if (closestWardenDist < 0.25) {
+                if (!wardenThreatActive) {
+                  playSound("threat");
+                  wardenThreatActive = true;
+                }
+               if (now - lastWardenTone > 350) {
+                 const danger = Math.max(0.001, 1 - (closestWardenDist / 0.25));
+                 tone(600 + danger * 600, 0.1, "sawtooth", 0.02 * danger);
+                 lastWardenTone = now;
+               }
+             } else {
+                wardenThreatActive = false;
+            }
+          }
+
+          for (let index = gridRipples.length - 1; index >= 0; index -= 1) {
+            const ripple = gridRipples[index];
+            ripple.life -= delta * 1.55;
+            if (ripple.life <= 0) {
+              gridRipples.splice(index, 1);
+              continue;
+            }
+            const radius = 0.025 + (1 - ripple.life) * 0.16;
+            context.save();
+            context.globalCompositeOperation = "screen";
+            if (andes) {
+              context.strokeStyle = `rgba(255,202,69,${ripple.life * 0.35})`;
+              context.lineWidth = 0.002 + ripple.life * 0.002;
+              context.shadowBlur = 15;
+              context.shadowColor = "#ffca45";
+            } else {
+              context.strokeStyle = `rgba(99,246,255,${ripple.life * 0.24})`;
+              context.lineWidth = 0.002 + ripple.life * 0.002;
+              context.shadowBlur = 15;
+              context.shadowColor = "#63f6ff";
+            }
+            context.beginPath();
+            context.ellipse(
+              ripple.x,
+              ripple.y,
+              radius,
+              radius * 0.58,
+              0,
+              0,
+              Math.PI * 2
+            );
+            context.stroke();
+            if (andes) {
+              context.strokeStyle = `rgba(227,84,66,${ripple.life * 0.25})`;
+            } else {
+              context.strokeStyle = `rgba(255,56,209,${ripple.life * 0.14})`;
+            }
+            context.beginPath();
+            context.ellipse(
+              ripple.x,
+              ripple.y,
+              radius * 0.72,
+              radius * 0.42,
+              0,
+              0,
+              Math.PI * 2
+            );
+            context.stroke();
+            context.restore();
+          }
+
+          Object.entries(collectibles).forEach(([orbId, orb]) => {
+            const pulse = 0.011 + Math.sin(now / 280 + orb.x * 8) * 0.003;
+            context.save();
+            context.shadowBlur = 15;
+            if (andes) {
+              context.shadowColor = "#ffe270";
+              context.beginPath();
+              context.fillStyle = "rgba(255, 226, 112, 0.22)";
+              context.arc(orb.x, orb.y, pulse * 2.4, 0, Math.PI * 2);
+              context.fill();
+              context.beginPath();
+              context.fillStyle = "#ffe270";
+            } else {
+              context.shadowColor = "#68e7ff";
+              context.beginPath();
+              context.fillStyle = "rgba(104, 231, 255, 0.16)";
+              context.arc(orb.x, orb.y, pulse * 2.4, 0, Math.PI * 2);
+              context.fill();
+              context.beginPath();
+              context.fillStyle = "#68e7ff";
+            }
+            context.arc(orb.x, orb.y, pulse, 0, Math.PI * 2);
+            context.fill();
+            context.restore();
+            if (Math.hypot(localPosition.x - orb.x, localPosition.y - orb.y) < 0.075 && now - lastCollectSent > 220) {
+              send({ type: "collect", orb_id: orbId });
+              lastCollectSent = now;
+            }
+          });
+
+          context.save();
+          context.globalCompositeOperation = "lighter";
+          for (let index = particles.length - 1; index >= 0; index -= 1) {
+            const particle = particles[index];
+            particle.life -= delta * 1.8;
+            if (particle.life <= 0) {
+              particles.splice(index, 1);
+              continue;
+            }
+            particle.x += particle.vx * delta;
+            particle.y += particle.vy * delta;
+            particle.vx *= Math.pow(0.12, delta);
+            particle.vy *= Math.pow(0.12, delta);
+            context.globalAlpha = particle.life;
+            context.fillStyle = particle.color;
+            context.shadowBlur = 15;
+            context.shadowColor = particle.color;
+            context.beginPath();
+            context.arc(particle.x, particle.y, particle.size * particle.life, 0, Math.PI * 2);
+            context.fill();
+          }
+          context.restore();
+
+          if (localPlayerId && !players.has(localPlayerId)) {
+            players.set(localPlayerId, { player_id: localPlayerId, name: playerName.value, ...localPosition, score: 0 });
+          }
+          players.forEach((player, id) => {
+            const isLocal = id === localPlayerId;
+            const x = isLocal ? localPosition.x : player.x;
+            const y = isLocal ? localPosition.y : player.y;
+            const previousMotion = playerMotion.get(id) || {
+              x,
+              y,
+              magnitude: 0,
+            };
+            const movementX = x - previousMotion.x;
+            const movementY = y - previousMotion.y;
+            const instantMagnitude = Math.hypot(movementX, movementY) / Math.max(delta, 0.001);
+            previousMotion.magnitude = previousMotion.magnitude * 0.72 + instantMagnitude * 0.28;
+            previousMotion.x = x;
+            previousMotion.y = y;
+            playerMotion.set(id, previousMotion);
+            const trail = trails.get(id) || [];
+            if (farm || castle || labyrinth) {
+              trail.push({ x, y });
+              if (trail.length > 12) trail.shift();
+              trails.set(id, trail);
+              trail.forEach((ghost, index) => {
+                context.fillStyle = isLocal
+                  ? `rgba(255,27,209,${(index + 1) / trail.length * 0.16})`
+                  : `rgba(0,236,255,${(index + 1) / trail.length * 0.12})`;
+                context.beginPath();
+                context.arc(ghost.x, ghost.y, 0.009 + index * 0.001, 0, Math.PI * 2);
+                context.fill();
+              });
+            } else {
+              trails.delete(id);
+            }
+            const playerLevel = levels.find((level) => level.number === player.current_level) || currentLevel;
+            const normalizedMovement = Math.min(
+              1,
+              previousMotion.magnitude / Math.max(playerLevel.speed, 0.01)
+            );
+            const animationState = player.stunned
+              ? "stunned"
+              : normalizedMovement > 0.035
+                ? "running"
+                : "idle";
+            const animationFps = animationState === "stunned"
+              ? 11
+              : animationState === "running"
+                ? 5 + normalizedMovement * (playerLevel.number === 3 ? 17 : playerLevel.number === 2 ? 11 : 7)
+                : 3;
+            const spriteFrame = Math.floor((now / 1000) * animationFps) % LLAMA_SPRITE.framesPerState;
+            if (llamaSpriteReady) {
+              const spriteSize = LLAMA_SPRITE.renderSize;
+              const spriteHeight = spriteSize * (canvas.width / canvas.height);
+              context.save();
+              if (player.invulnerable) {
+                context.globalAlpha = 0.32 + (Math.sin(now / 105) + 1) * 0.24;
+              }
+              context.translate(x, y);
+              context.scale(authoritativeFacing.get(id) || 1, 1);
+              context.shadowBlur = 15;
+              const skinState = SPRITE_STATE_TABLE[player.equipped_skin_id] || SPRITE_STATE_TABLE.default;
+              context.filter = skinState.filter;
+              context.shadowColor = player.stunned
+                ? "#ffffff"
+                : skinState.glow;
+              context.drawImage(
+                llamaSpriteImage,
+                spriteFrame * LLAMA_SPRITE.frameWidth,
+                LLAMA_SPRITE.states[animationState] * LLAMA_SPRITE.frameHeight,
+                LLAMA_SPRITE.frameWidth,
+                LLAMA_SPRITE.frameHeight,
+                -spriteSize / 2,
+                -spriteHeight / 2,
+                spriteSize,
+                spriteHeight
+              );
+              context.restore();
+            }
+            if (player.invulnerable) {
+              context.save();
+              context.shadowBlur = 18;
+              context.shadowColor = "#63f6ff";
+              context.strokeStyle = `rgba(99,246,255,${0.5 + (Math.sin(now / 120) + 1) * 0.2})`;
+              context.lineWidth = 0.004;
+              context.setLineDash([0.009, 0.007]);
+              context.lineDashOffset = -now / 4500;
+              context.beginPath();
+              context.arc(x, y, 0.043, 0, Math.PI * 2);
+              context.stroke();
+              context.restore();
+            }
+            if (player.stunned) {
+              context.save();
+              context.shadowBlur = 15;
+              context.shadowColor = "#ffffff";
+              context.strokeStyle = "#fff";
+              context.lineWidth = 0.004;
+              context.beginPath(); context.arc(x, y, 0.036 + Math.sin(now / 70) * 0.006, 0, Math.PI * 2); context.stroke();
+              context.restore();
+            }
+            context.fillStyle = "#f7f8ff";
+            context.font = "700 0.026px system-ui";
+            context.textAlign = "center";
+            context.fillText(player.name, x, y - 0.061);
+          });
+          for (const playerId of playerMotion.keys()) {
+            if (!players.has(playerId)) playerMotion.delete(playerId);
+          }
+          requestAnimationFrame(draw);
+        };
+
+        requestAnimationFrame(draw);
+        loadAdminStatus().finally(() => {
+          connect();
+          loadPaymentConfig();
+        });
+      })();
+    </script>
+  </body>
+</html>

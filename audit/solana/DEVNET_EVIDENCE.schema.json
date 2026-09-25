@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "TLAMA sanitized Devnet evidence",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "cluster", "manifest", "signatures", "accountSnapshots", "scenarios"],
+  "properties": {
+    "schemaVersion": {"const": 1},
+    "cluster": {"const": "devnet"},
+    "manifest": {"type": "object", "additionalProperties": false, "required": ["sourceCommit", "artifactHashes", "programIds"]},
+    "signatures": {"type": "object", "description": "All required scenario keys, each with canonical base58 signature, positive slot, confirmationStatus finalized, and outcome successful or rejected. Rejection scenarios must use outcome rejected."},
+    "accountSnapshots": {"type": "object", "description": "All six manifest ID keys, each with address, public owner, nonnegative lamports, lowercase dataSha256, positive slot, and confirmationStatus finalized."},
+    "scenarios": {"type": "object", "description": "All required scenario keys with value true."}
+  },
+  "description": "The Python verifier is normative: it rejects extra keys and secret-like field names, binds source/artifact hashes and IDs to the supplied frozen manifest, and requires finalized public evidence."
+}

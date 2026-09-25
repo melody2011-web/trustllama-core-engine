@@ -1,0 +1,74 @@
+kind = "web"
+previewPath = "/"
+title = "TrustLlama Arcade"
+description = "The central TrustLlama website, with direct access to both arcade games, the white paper, technical information, and the official memes and artwork gallery."
+version = "1.0.0"
+id = "artifacts/llama-website"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 22367
+
+[services.development]
+run = "pnpm --filter @workspace/llama-website run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/llama-website", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/llama-website/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "22367"
+BASE_PATH = "/"
+
+[[services]]
+name = "arcade"
+paths = [ "/llama-website/game/" ]
+localPort = 22368
+
+[services.development]
+run = "../../.pythonlibs/bin/python -u ../../llama_website/llama_game/backend.py"
+
+[services.production]
+
+[services.production.run]
+args = [ ".pythonlibs/bin/python", "-u", "llama_website/llama_game/backend.py" ]
+
+[services.production.run.env]
+PORT = "22368"
+BASE_PATH = "/llama-website/game"
+
+[services.production.health.startup]
+path = "/healthz"
+
+[services.env]
+PORT = "22368"
+BASE_PATH = "/llama-website/game"
+
+[[services]]
+name = "fighter"
+paths = [ "/fighter-api", "/fighter-ws" ]
+localPort = 22370
+
+[services.development]
+run = "../../.pythonlibs/bin/python -u src/games/fighting-game/server.py"
+
+[services.production]
+
+[services.production.run]
+args = [ ".pythonlibs/bin/python", "-u", "artifacts/llama-website/src/games/fighting-game/server.py" ]
+
+[services.production.run.env]
+PORT = "22370"
+
+[services.production.health.startup]
+path = "/fighter-api/healthz"
+
+[services.env]
+PORT = "22370"
