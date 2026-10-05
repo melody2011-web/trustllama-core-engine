@@ -30,12 +30,12 @@ See the toolkit README for authorization, rate limits, optional scenarios, and r
 
 ## 🛠️ Commercial Software Licensing
 
-Commercial studios can license the separate 30Hz FastAPI/WebSocket server-authoritative arcade backend with local SQLite WAL persistence through [secure USDC checkout](https://tllama.me/buy), from **$350 to $1,950 USDC**. The free toolkit does not include the commercial engine. License scope is governed by the executed corporate licensing agreement; checkout accepts native USDC on Solana.
+Commercial studios can license the separate 30Hz FastAPI/WebSocket server-authoritative arcade backend with local SQLite WAL persistence through [secure USDC checkout](https://tllama.me/buy), from **350 to 1,950 USDC**. The free toolkit does not include the commercial engine. License scope is governed by the executed corporate licensing agreement; checkout accepts native USDC on Solana.
 
 ### Available Licensing Packages:
-* **Indie Developer License (\$350 USDC):** Entry-tier package for solo engineers and rapid prototyping.
-* **Startup Studio License (\$750 USDC) `MOST CHOSEN`:** Commercial rights for multi-project development teams and growing studios. Includes advanced automated webhook delivery rails.
-* **Enterprise Commercial License (\$1,950 USDC):** Full institutional, unrestricted high-throughput usage rights with priority production master distribution frameworks.
+* **Indie Developer License (350 USDC):** Entry-tier package for solo engineers and rapid prototyping.
+* **Startup Studio License (750 USDC) `MOST CHOSEN`:** Commercial rights for multi-project development teams and growing studios. Includes advanced automated webhook delivery rails.
+* **Enterprise Commercial License (1,950 USDC):** Full institutional, unrestricted high-throughput usage rights with priority production master distribution frameworks.
 
 *Note: License scope is strictly governed by the executed corporate licensing agreement.*
 
